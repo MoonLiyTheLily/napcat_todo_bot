@@ -72,7 +72,7 @@ def _log_task_result(task: asyncio.Task):
         result = task.result()
         logger.info("异步任务完成，结果: %s", result)
     except asyncio.CancelledError:
-        logger.exception("异步任务被取消")
+        logger.info("异步任务被取消")
     except Exception as e:
         logger.exception("异步任务出现错误: %s", str(e))
 
@@ -112,7 +112,7 @@ async def todo_notifier(websocket):
             logger.error("WebSocket连接已关闭，停止待办事项通知")
             return
         except asyncio.CancelledError:
-            logger.exception("待办事项通知任务已取消")
+            logger.info("待办事项通知任务已取消")
             raise
         except Exception as e:
             logger.exception("待办事项通知出现错误: %s，将在1分钟后重试", str(e))
