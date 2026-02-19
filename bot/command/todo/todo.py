@@ -1,6 +1,6 @@
-import json
 import logging
 from bot.types import CommandEvent, TodoItem
+from bot.apis.create_reply import create_reply
 from database import TodoDatabase
 
 logger = logging.getLogger(__name__)
@@ -45,14 +45,21 @@ class TodoHandler:
         if handler is not None:
             reply = handler(command_event)
         else:
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": "todo_handler已执行",
-                },
-            }
-        return json.dumps(reply, ensure_ascii=False)
+            # reply = {
+            #     "action": "send_private_msg",
+            #     "params": {
+            #         "user_id": command_event.user_id,
+            #         "message": "todo_handler已执行，但未找到对应的处理函数。",
+            #     },
+            # }
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("todo_handler已执行，但未找到对应的处理函数。")
+                .build()
+            )
+
+        return reply
 
     def help(self, command_event: CommandEvent):
         """
@@ -66,55 +73,42 @@ class TodoHandler:
             "/todo done <事项编号> - 标记指定的待办事项为已完成\n"
             "/todo help - 显示此帮助信息"
         )
-        reply = {
-            "action": "send_private_msg",
-            "params": {
-                "user_id": command_event.user_id,
-                "message": {
-                    "type": "text",
-                    "data": {"text": str(help_message)},
-                },
-            },
-        }
-        return reply
+        reply = create_reply().to(command_event.user_id).text(help_message)
+        return reply.build()
 
     def parameter_not_found(self, command_event: CommandEvent):
         """
         处理未知参数的函数
         """
-        reply = {
-            "action": "send_private_msg",
-            "params": {
-                "user_id": command_event.user_id,
-                "message": {
-                    "type": "text",
-                    "data": {
-                        "text": "未知的todo命令参数\n请使用/todo help获取帮助信息。"
-                    },
-                },
-            },
-        }
-        return reply
+        # reply = {
+        #     "action": "send_private_msg",
+        #     "params": {
+        #         "user_id": command_event.user_id,
+        #         "message": {
+        #             "type": "text",
+        #             "data": {
+        #                 "text": "未知的todo命令参数\n请使用/todo help获取帮助信息。"
+        #             },
+        #         },
+        #     },
+        # }
+        reply = (
+            create_reply()
+            .to(command_event.user_id)
+            .text("未知的todo命令参数\n请使用/todo help获取帮助信息。")
+        )
+        return reply.build()
 
     def default(self, command_event: CommandEvent):
         """
         处理无参数情况的函数
         """
-        reply = {
-            "action": "send_private_msg",
-            "params": {
-                "user_id": command_event.user_id,
-                "message": [
-                    {
-                        "type": "text",
-                        "data": {
-                            "text": "默认todo_handler已执行\n您可以采用/todo help获取帮助信息。"
-                        },
-                    }
-                ],
-            },
-        }
-        return reply
+        reply = (
+            create_reply()
+            .to(command_event.user_id)
+            .text("默认todo_handler已执行\n您可以采用/todo help获取帮助信息。")
+        )
+        return reply.build()
 
     def get_todos(self, user_id: str):
         """
@@ -150,17 +144,8 @@ class TodoHandler:
                 todo_number += 1
             message = message[:-1]  # 去掉最后的换行符
 
-        reply = {
-            "action": "send_private_msg",
-            "params": {
-                "user_id": command_event.user_id,
-                "message": {
-                    "type": "text",
-                    "data": {"text": message},
-                },
-            },
-        }
-        return reply
+        reply = create_reply().to(command_event.user_id).text(message)
+        return reply.build()
 
     def add(self, command_event: CommandEvent):
         """
@@ -170,17 +155,10 @@ class TodoHandler:
         # 由于原来就是按空格划分的，所以这里用空格作为分隔符链接所有内容
         full_content = " ".join(command_event.parameters[1:])
         if len(command_event.parameters) < 2 or full_content.strip() == "":
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "请提供待办事项的内容。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply().to(command_event.user_id).text("请提供待办事项的内容。")
+            )
+            return reply.build()
 
         self.todo_db.add_todo(
             user_id=command_event.user_id,
@@ -188,18 +166,9 @@ class TodoHandler:
             user_create_time=command_event.user_send_time,
         )
 
-        reply = {
-            "action": "send_private_msg",
-            "params": {
-                "user_id": command_event.user_id,
-                "message": {
-                    "type": "text",
-                    "data": {"text": "已添加新的待办事项。"},
-                },
-            },
-        }
+        reply = create_reply().to(command_event.user_id).text("已添加新的待办事项。")
         self.todo_db.commit_operation()
-        return reply
+        return reply.build()
 
     def delete(self, command_event: CommandEvent):
         """
@@ -207,73 +176,46 @@ class TodoHandler:
         用户指定的是待办的编号，从1开始。待办编号是“此用户的第几个待办”，而不是总数据库里的id
         """
         if len(command_event.parameters) < 2:
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "请提供要删除的待办事项编号。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("请提供要删除的待办事项编号。")
+            )
+            return reply.build()
         if not command_event.parameters[1].isdigit():
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "待办事项编号必须是数字。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("待办事项编号必须是数字。")
+            )
+            return reply.build()
 
         todo_index = int(command_event.parameters[1]) - 1
 
         todo_list = self.todo_db.check_todo(command_event.user_id)
         if todo_list is None or len(todo_list) == 0:
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "您的待办事项列表为空，无法删除。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("您的待办事项列表为空，无法删除。")
+            )
+            return reply.build()
+
         if todo_index < 0 or todo_index >= len(todo_list):
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "待办事项编号无效，无法删除。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("待办事项编号无效，无法删除。")
+            )
+            return reply.build()
+
         todo_item = todo_list[todo_index]
         assert isinstance(todo_item, TodoItem)
         self.todo_db.delete_todo(command_event.user_id, todo_item.database_id)
 
-        reply = {
-            "action": "send_private_msg",
-            "params": {
-                "user_id": command_event.user_id,
-                "message": {
-                    "type": "text",
-                    "data": {"text": "已删除指定的待办事项。"},
-                },
-            },
-        }
+        reply = create_reply().to(command_event.user_id).text("已删除指定的待办事项。")
         self.todo_db.commit_operation()
-        return reply
+        return reply.build()
 
     def done(self, command_event: CommandEvent):
         """
@@ -281,57 +223,39 @@ class TodoHandler:
         用户指定的是待办的编号，从1开始。待办编号是“此用户的第几个待办”，而不是总数据库里的id
         """
         if len(command_event.parameters) < 2:
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "请提供要标记为完成的待办事项编号。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("请提供要标记为完成的待办事项编号。")
+            )
+            return reply.build()
         if not command_event.parameters[1].isdigit():
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "待办事项编号必须是数字。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("待办事项编号必须是数字。")
+            )
+            return reply.build()
 
         todo_index = int(command_event.parameters[1]) - 1
 
         todo_list = self.todo_db.check_todo(command_event.user_id)
         if todo_list is None or len(todo_list) == 0:
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "您的待办事项列表为空，无法标记完成。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("您的待办事项列表为空，无法标记完成。")
+            )
+            return reply.build()
+
         if todo_index < 0 or todo_index >= len(todo_list):
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "待办事项编号无效，无法标记完成。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("待办事项编号无效，无法标记完成。")
+            )
+            return reply.build()
+
         todo_item = todo_list[todo_index]
         assert isinstance(todo_item, TodoItem)
         self.todo_db.complete_todo(
@@ -341,17 +265,12 @@ class TodoHandler:
         )
         self.todo_db.commit_operation()
 
-        reply = {
-            "action": "send_private_msg",
-            "params": {
-                "user_id": command_event.user_id,
-                "message": {
-                    "type": "text",
-                    "data": {"text": "已将指定的待办事项标记为完成。"},
-                },
-            },
-        }
-        return reply
+        reply = (
+            create_reply()
+            .to(command_event.user_id)
+            .text("已将指定的待办事项标记为完成。")
+        )
+        return reply.build()
 
     def undone(self, command_event: CommandEvent):
         """
@@ -359,57 +278,38 @@ class TodoHandler:
         用户指定的是待办的编号，从1开始。待办编号是“此用户的第几个待办”，而不是总数据库里的id
         """
         if len(command_event.parameters) < 2:
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "请提供要标记为未完成的待办事项编号。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("请提供要标记为未完成的待办事项编号。")
+            )
+            return reply.build()
         if not command_event.parameters[1].isdigit():
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "待办事项编号必须是数字。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("待办事项编号必须是数字。")
+            )
+            return reply.build()
 
         todo_index = int(command_event.parameters[1]) - 1
 
         todo_list = self.todo_db.check_todo(command_event.user_id)
         if todo_list is None or len(todo_list) == 0:
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "您的待办事项列表为空，无法标记未完成。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("您的待办事项列表为空，无法标记未完成。")
+            )
+            return reply.build()
         if todo_index < 0 or todo_index >= len(todo_list):
-            reply = {
-                "action": "send_private_msg",
-                "params": {
-                    "user_id": command_event.user_id,
-                    "message": {
-                        "type": "text",
-                        "data": {"text": "待办事项编号无效，无法标记未完成。"},
-                    },
-                },
-            }
-            return reply
+            reply = (
+                create_reply()
+                .to(command_event.user_id)
+                .text("待办事项编号无效，无法标记未完成。")
+            )
+            return reply.build()
+
         todo_item = todo_list[todo_index]
         assert isinstance(todo_item, TodoItem)
         self.todo_db.uncomplete_todo(
@@ -418,14 +318,9 @@ class TodoHandler:
         )
         self.todo_db.commit_operation()
 
-        reply = {
-            "action": "send_private_msg",
-            "params": {
-                "user_id": command_event.user_id,
-                "message": {
-                    "type": "text",
-                    "data": {"text": "已将指定的待办事项标记为未完成。"},
-                },
-            },
-        }
-        return reply
+        reply = (
+            create_reply()
+            .to(command_event.user_id)
+            .text("已将指定的待办事项标记为未完成。")
+        )
+        return reply.build()

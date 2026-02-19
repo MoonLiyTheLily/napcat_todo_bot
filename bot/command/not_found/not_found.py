@@ -1,6 +1,6 @@
-import json
 import logging
 from bot.types import CommandEvent
+from bot.apis.create_reply import create_reply
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +18,17 @@ class NotFoundHandler:
         """
         logger.info(command_event.command)
         logger.info("not_found_handler已执行")
-        reply = {
-            "action": "send_private_msg",
-            "params": {
-                "user_id": command_event.user_id,
-                "message": "未找到命令。/help 可以查看目前支持的命令列表。",
-            },
-        }
-        return json.dumps(reply, ensure_ascii=False)
+        # reply = {
+        #     "action": "send_private_msg",
+        #     "params": {
+        #         "user_id": command_event.user_id,
+        #         "message": "未找到命令。/help 可以查看目前支持的命令列表。",
+        #     },
+        # }
+        # return json.dumps(reply, ensure_ascii=False)
+        reply = (
+            create_reply()
+            .to(command_event.user_id)
+            .text("未找到命令。/help 可以查看目前支持的命令列表。")
+        )
+        return reply.build()

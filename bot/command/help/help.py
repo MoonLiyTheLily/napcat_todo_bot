@@ -1,6 +1,6 @@
 import logging
-import json
 from bot.types.command_event import CommandEvent
+from bot.apis.create_reply import create_reply
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +21,16 @@ class HelpHandler:
             "/todo - 管理待办事项\n（使用 /todo help 获取更多信息）\n"
             "/help - 显示此帮助信息"
         )
-        reply = {
-            "action": "send_private_msg",
-            "params": {
-                "user_id": command_event.user_id,
-                "message": {
-                    "type": "text",
-                    "data": {"text": help_message},
-                },
-            },
-        }
-        return json.dumps(reply, ensure_ascii=False)
+        reply = create_reply().to(command_event.user_id).text(help_message)
+        # reply = {
+        #     "action": "send_private_msg",
+        #     "params": {
+        #         "user_id": command_event.user_id,
+        #         "message": {
+        #             "type": "text",
+        #             "data": {"text": help_message},
+        #         },
+        #     },
+        # }
+        # return json.dumps(reply, ensure_ascii=False)
+        return reply.build()
