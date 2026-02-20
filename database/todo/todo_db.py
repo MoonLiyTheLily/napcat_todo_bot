@@ -45,6 +45,7 @@ class TodoDatabase:
                 updated_at VARCHAR(30) DEFAULT CURRENT_TIMESTAMP,\
                 completed_at VARCHAR(30))"
         )
+        self.db.commit()
 
     def initialize_table(self):
         """
@@ -151,6 +152,7 @@ class TodoDatabase:
              VALUES (?,?,?,datetime('now', 'localtime'))",
             (user_id, content, user_create_time),
         )
+        self.db.commit()
 
     def add_todo_todoitem(self, todo_item: TodoItem):
         """
@@ -173,6 +175,7 @@ class TodoDatabase:
                 todo_item.complete_time,
             ),
         )
+        self.db.commit()
 
     def modify_todo(self, user_id: str, todo_id: int, new_content: str):
         cursor = self.db.cursor()
@@ -181,6 +184,7 @@ class TodoDatabase:
              WHERE user_id=? AND todo_id=?",
             (new_content, user_id, todo_id),
         )
+        self.db.commit()
         return None
 
     def complete_todo(self, user_id: str, todo_id: int, complete_time: str = ""):
@@ -207,6 +211,7 @@ class TodoDatabase:
                  WHERE user_id=? AND todo_id=?",
                 (complete_time, user_id, todo_id),
             )
+        self.db.commit()
         return None
 
     def uncomplete_todo(self, user_id: str, todo_id: int):
@@ -224,6 +229,7 @@ class TodoDatabase:
              WHERE user_id=? AND todo_id=?",
             (user_id, todo_id),
         )
+        self.db.commit()
         return None
 
     def delete_todo(self, user_id: str, todo_id: int):
@@ -240,10 +246,8 @@ class TodoDatabase:
             "DELETE FROM todo_table WHERE user_id=? AND todo_id=?",
             (user_id, todo_id),
         )
-        return None
-
-    def commit_operation(self):
         self.db.commit()
+        return None
 
     def close(self):
         self.db.close()

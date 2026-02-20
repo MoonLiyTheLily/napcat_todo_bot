@@ -148,7 +148,6 @@ class TodoHandler:
         )
 
         reply = create_reply().to(command_event.user_id).text("已添加新的待办事项。")
-        self.todo_db.commit_operation()
         return reply.build()
 
     def delete(self, command_event: CommandEvent):
@@ -195,7 +194,6 @@ class TodoHandler:
         self.todo_db.delete_todo(command_event.user_id, todo_item.database_id)
 
         reply = create_reply().to(command_event.user_id).text("已删除指定的待办事项。")
-        self.todo_db.commit_operation()
         return reply.build()
 
     def done(self, command_event: CommandEvent):
@@ -244,7 +242,6 @@ class TodoHandler:
             todo_item.database_id,
             command_event.user_send_time,
         )
-        self.todo_db.commit_operation()
 
         reply = (
             create_reply()
@@ -297,7 +294,6 @@ class TodoHandler:
             command_event.user_id,
             todo_item.database_id,
         )
-        self.todo_db.commit_operation()
 
         reply = (
             create_reply()

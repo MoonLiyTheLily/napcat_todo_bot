@@ -2,9 +2,12 @@ import asyncio
 import json
 import logging
 import sys
+import datetime
 import websockets
 from bot.handlers import UniversalHandler
 from bot.active.todo_notifier import todo_notifier
+from bot.active.gravity import gravity
+from bot.config.config import DEFAULT_CONFIG
 from database import LastMessageDatabase
 
 logger = logging.getLogger(__name__)
@@ -31,6 +34,7 @@ async def active_actions(websocket):
         tasks.append(
             asyncio.create_task(todo_notifier(websocket), name="todo_notifier")
         )
+        tasks.append(asyncio.create_task(gravity(websocket), name="gravity"))
 
         # 主动逻辑任务，都在此处 append
         # tasks.append(asyncio.create_task(other_active_job(websocket), name="other_active_job"))
@@ -93,9 +97,14 @@ async def handle_event(websocket):
             # 处理消息事件
             if event.get("post_type") == "message":
                 try:
+                    last_message_db.initialize_table()
                     last_message_db.update_last_message_record(
-                        event["user_id"], event["time"]
+                        event["user_id"],
+                        datetime.datetime.fromtimestamp(event["time"]).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
                     )
+                    # 更新最后消息记录
                     reply = await universal_handler.handle(event)
                 except Exception as e:
                     logger.exception("处理消息事件时出现错误: %s", str(e))
@@ -121,8 +130,8 @@ async def main():
     """
     server = await websockets.serve(
         handle_event,
-        "127.0.0.1",
-        8000,
+        DEFAULT_CONFIG["websocket_host"],
+        DEFAULT_CONFIG["websocket_port"],
         subprotocols=[],  # 建议加上，兼容性更好
     )
     logger.info("WebSocket 服务已启动")
