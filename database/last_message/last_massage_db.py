@@ -17,6 +17,9 @@ class LastMessageDatabase:
         self.db = sqlite3.connect(str(db_path))
         self.last_result = None
 
+    def __del__(self):
+        self.db.close()
+
     def is_initialized(self):
         """
         检查数据库是否初始化（也就是建立了last_message表）
@@ -43,6 +46,7 @@ class LastMessageDatabase:
                 user_id VARCHAR(15) NOT NULL UNIQUE,\
                 send_time VARCHAR(30) DEFAULT CURRENT_TIMESTAMP)"
         )
+        self.db.commit()
 
     def initialize_table(self):
         """
@@ -52,6 +56,7 @@ class LastMessageDatabase:
         """
         if not self.is_initialized():
             self.create_last_message_table()
+            self.db.commit()
 
     def sql_result_to_last_message_record_items(
         self, sql_result
@@ -100,10 +105,12 @@ class LastMessageDatabase:
             "INSERT INTO last_message (user_id, send_time) VALUES (?, ?)",
             (user_id, send_time),
         )
+        self.db.commit()
 
     def update_last_message_record(self, user_id: str, send_time: str):
         """
         更新last message record，如果没有就插入
+        另外由于这个函数在main里也有调用，所以同时也处理删除过于老旧的记录
 
         :param self: 说明
         :param user_id: 用户id
@@ -114,6 +121,17 @@ class LastMessageDatabase:
             "INSERT INTO last_message (user_id, send_time) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET send_time=excluded.send_time",
             (user_id, send_time),
         )
+        cursor.execute(
+            "SELECT id FROM last_message WHERE send_time < ?",
+            (datetime.datetime.now() - datetime.timedelta(days=1),),
+        )
+        rows = cursor.fetchall()
+        if rows:
+            for row in rows:
+                self.delete_last_message_record(row[0])
+                logger.info("已删除过于老旧的消息记录，来自用户: %s", row[1])
+        self.db.commit()
+        logger.info("已更新用户 %s 的最后一次信息，发送时间: %s", user_id, send_time)
 
     def delete_last_message_record(self, user_id: str):
         """
@@ -124,6 +142,7 @@ class LastMessageDatabase:
         """
         cursor = self.db.cursor()
         cursor.execute("DELETE FROM last_message WHERE user_id = ?", (user_id,))
+        self.db.commit()
 
     def check_all_user(
         self, threshold: int = 60, earliest: int = 1440
@@ -161,14 +180,6 @@ class LastMessageDatabase:
             user_ids = [item[0] for item in data]
             logger.info("获得的用户id列表: %s", user_ids)
             return user_ids
-
-    def commit_operation(self):
-        """
-        提交操作
-
-        :param self: 说明
-        """
-        self.db.commit()
 
     def close(self):
         """

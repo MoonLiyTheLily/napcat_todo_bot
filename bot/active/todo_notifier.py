@@ -4,6 +4,7 @@ import websockets
 from database import TodoDatabase
 from bot.apis.create_reply import create_reply
 from bot.types import TodoItem
+from bot.config.config import DEFAULT_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +13,7 @@ async def todo_notifier(websocket):
     """
     todo_notifier 的 Docstring
     """
+    notify_interval = DEFAULT_CONFIG["active"]["todo"]["notify_interval"]
     while True:
         try:
             db = TodoDatabase()
@@ -32,7 +34,7 @@ async def todo_notifier(websocket):
                         await websocket.send(reply)
                         logger.info("已发送待办事项通知给用户%s", user_id)
             db.close()
-            await asyncio.sleep(1800)  # 每30分钟检查一次
+            await asyncio.sleep(notify_interval)  # 默认半小时检查一次
         except (websockets.ConnectionClosedError, websockets.ConnectionClosed):
             logger.error("WebSocket连接已关闭，停止待办事项通知")
             return
