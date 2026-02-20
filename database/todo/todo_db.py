@@ -12,7 +12,7 @@ class TodoDatabase:
     """
 
     def __init__(self) -> None:
-        db_path = Path(__file__).parent / "test.db"
+        db_path = Path(__file__).parent.parent / "test.db"
         self.db = sqlite3.connect(str(db_path))
         self.last_result = None
 

@@ -22,15 +22,4 @@ class HelpHandler:
             "/help - 显示此帮助信息"
         )
         reply = create_reply().to(command_event.user_id).text(help_message)
-        # reply = {
-        #     "action": "send_private_msg",
-        #     "params": {
-        #         "user_id": command_event.user_id,
-        #         "message": {
-        #             "type": "text",
-        #             "data": {"text": help_message},
-        #         },
-        #     },
-        # }
-        # return json.dumps(reply, ensure_ascii=False)
         return reply.build()

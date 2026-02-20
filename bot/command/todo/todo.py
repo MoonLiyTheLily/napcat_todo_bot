@@ -45,13 +45,6 @@ class TodoHandler:
         if handler is not None:
             reply = handler(command_event)
         else:
-            # reply = {
-            #     "action": "send_private_msg",
-            #     "params": {
-            #         "user_id": command_event.user_id,
-            #         "message": "todo_handler已执行，但未找到对应的处理函数。",
-            #     },
-            # }
             reply = (
                 create_reply()
                 .to(command_event.user_id)
@@ -80,18 +73,6 @@ class TodoHandler:
         """
         处理未知参数的函数
         """
-        # reply = {
-        #     "action": "send_private_msg",
-        #     "params": {
-        #         "user_id": command_event.user_id,
-        #         "message": {
-        #             "type": "text",
-        #             "data": {
-        #                 "text": "未知的todo命令参数\n请使用/todo help获取帮助信息。"
-        #             },
-        #         },
-        #     },
-        # }
         reply = (
             create_reply()
             .to(command_event.user_id)
