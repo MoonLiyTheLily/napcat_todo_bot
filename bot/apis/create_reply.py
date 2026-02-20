@@ -7,7 +7,7 @@ class ReplyMessage:
         self.user_id: str = ""
         self.message: list = []
 
-    def to(self, _user_id):
+    def to(self, _user_id: str):
         self.user_id = _user_id
         return self
 

@@ -4,8 +4,8 @@ import logging
 import sys
 import websockets
 from bot.handlers import UniversalHandler
-from bot.types.todo_item import TodoItem
-from database import TodoDatabase
+from bot.active.todo_notifier import todo_notifier
+from database import LastMessageDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ async def active_actions(websocket):
             if exc is not None:
                 raise exc
 
-        # 正常情况下（你的任务通常是 while True），这里一般不会走到
+        # 正常情况下，这里一般不会走到
         return None
 
     except asyncio.CancelledError:
@@ -77,51 +77,6 @@ def _log_task_result(task: asyncio.Task):
         logger.exception("异步任务出现错误: %s", str(e))
 
 
-async def todo_notifier(websocket):
-    """
-    todo_notifier 的 Docstring
-    """
-    while True:
-        try:
-            db = TodoDatabase()
-            logger.info("检查待办事项通知")
-            users = db.check_all_user()
-            if users is not None:
-                for user_id in users:
-                    user_todos = []
-                    todo_items = db.check_todo(user_id)
-                    assert todo_items is not None
-                    for item in todo_items:
-                        assert isinstance(item, TodoItem)
-                        if not item.is_done:
-                            user_todos.append(item.get_list_string())
-                    if len(user_todos) > 0:
-                        message = "您有以下待办事项未完成：\n" + "\n".join(user_todos)
-                        reply = {
-                            "action": "send_private_msg",
-                            "params": {
-                                "user_id": user_id,
-                                "message": message,
-                            },
-                        }
-                        await websocket.send(json.dumps(reply, ensure_ascii=False))
-                        logger.info("已发送待办事项通知给用户%s", user_id)
-            db.close()
-            await asyncio.sleep(1800)  # 每30分钟检查一次
-        except (websockets.ConnectionClosedError, websockets.ConnectionClosed):
-            logger.error("WebSocket连接已关闭，停止待办事项通知")
-            return
-        except asyncio.CancelledError:
-            logger.info("待办事项通知任务已取消")
-            raise
-        except Exception as e:
-            logger.exception("待办事项通知出现错误: %s，将在1分钟后重试", str(e))
-            raise
-        finally:
-            if db is not None:
-                db.close()
-
-
 async def handle_event(websocket):
     """
     handle_event 的 Docstring
@@ -129,6 +84,7 @@ async def handle_event(websocket):
     :param websocket: 说明
     """
     universal_handler = UniversalHandler()
+    last_message_db = LastMessageDatabase()
     active_task = asyncio.create_task(active_actions(websocket))
     active_task.add_done_callback(_log_task_result)
     try:
@@ -137,6 +93,9 @@ async def handle_event(websocket):
             # 处理消息事件
             if event.get("post_type") == "message":
                 try:
+                    last_message_db.update_last_message_record(
+                        event["user_id"], event["time"]
+                    )
                     reply = await universal_handler.handle(event)
                 except Exception as e:
                     logger.exception("处理消息事件时出现错误: %s", str(e))
