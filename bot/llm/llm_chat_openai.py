@@ -95,6 +95,15 @@ class LLMChatHandlerOpenAI:
             target_session = self.sessions[user_id]
         assert isinstance(target_session, LLMChatSessionOpenAI)
 
+        if user_message == "":
+            logger.info("当前用户(%s)没有发送文本消息或者获取的文本消息为空", user_id)
+            await sender.send(
+                create_reply()
+                .to(user_id)
+                .text("发送的消息似乎不含有文本，无法处理。")
+                .build()
+            )
+            return
         # 处理一些基本的命令
         if user_message == "stat":
             await sender.send(
