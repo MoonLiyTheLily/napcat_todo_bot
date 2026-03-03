@@ -1,7 +1,8 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv("../../.env")
+load_dotenv(Path(__file__).parent.parent.parent / ".env")
 api_key = os.getenv("api_key")
 base_url = os.getenv("base_url")
 target_model = os.getenv("target_model")
