@@ -1,20 +1,14 @@
-import os
 import logging
-from pathlib import Path
 from typing import Sequence
 from openai import AsyncOpenAI, RateLimitError, APIError
 from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
-from dotenv import load_dotenv
 from bot.apis.create_reply import create_reply
 from bot.apis.send_message import sender
+from bot.config.config import DEFAULT_CONFIG
 
-# api_key = DEFAULT_CONFIG["llm"]["basic"]["api_key"]
-# base_url = DEFAULT_CONFIG["llm"]["basic"]["base_url"]
-# target_model = DEFAULT_CONFIG["llm"]["basic"]["target_model"]
-load_dotenv(Path(__file__).parent.parent.parent / ".env")
-api_key = os.getenv("api_key")
-base_url = os.getenv("base_url")
-target_model = os.getenv("target_model")
+api_key = DEFAULT_CONFIG["llm"]["basic"]["api_key"]
+base_url = DEFAULT_CONFIG["llm"]["basic"]["base_url"]
+target_model = DEFAULT_CONFIG["llm"]["basic"]["target_model"]
 
 logger = logging.getLogger(__name__)
 
