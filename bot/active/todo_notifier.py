@@ -11,9 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 async def todo_notifier():
-    """
-    todo_notifier 的 Docstring
-    """
+    """Todo定时通知函数"""
     notify_interval = DEFAULT_CONFIG["active"]["todo"]["notify_interval"]
     while True:
         try:

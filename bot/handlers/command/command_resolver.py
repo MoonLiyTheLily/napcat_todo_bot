@@ -6,8 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 def is_command(event: dict) -> bool:
-    """
-    判断当前消息事件是不是一个命令，返回bool
+    """判断当前消息事件是不是一个命令，返回bool
 
     :param event: 已经转化成dict的NapCatQQ事件列表
     :type event: dict
@@ -28,8 +27,7 @@ def is_command(event: dict) -> bool:
 
 
 def command_resolver(event: dict):
-    """
-    解析命令，返回CommandEvent
+    """解析命令，返回CommandEvent
 
     dict结构为{"command":<命令名字>,"parameters":<一个list，含有当前文本段剩下所有的paramater，按照空格split>}
 
@@ -63,8 +61,7 @@ def command_resolver(event: dict):
 
 
 def command_resolver_dict(event: dict):
-    """
-    解析命令，如果成功，返回一个dict，或者None
+    """解析命令，如果成功，返回一个dict，或者None
 
     dict结构为{"command":<命令名字>,"parameters":<一个list，含有当前文本段剩下所有的paramater，按照空格split>}
 

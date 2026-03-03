@@ -21,9 +21,7 @@ def is_private_chat(event: dict) -> bool:
 
 
 class UniversalHandler:
-    """
-    处理所有消息的总类
-    """
+    """处理所有消息的总类"""
 
     def __init__(self) -> None:
         self.command_handler = CommandHandler()
@@ -31,8 +29,7 @@ class UniversalHandler:
         self.last_message_db = LastMessageDatabase()
 
     async def handle(self, event: dict):
-        """
-        总的消息处理器
+        """总的消息处理器
 
         :param self: 说明
         :param event: 说明

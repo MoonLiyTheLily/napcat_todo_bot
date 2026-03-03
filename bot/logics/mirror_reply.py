@@ -7,8 +7,7 @@ logger = logging.getLogger(__name__)
 
 # 本函数保留了最原始的生成返回消息逻辑，以供有关消息模块编写时参考
 async def create_mirror_reply(event: dict, mirror_tip: bool = False):
-    """
-    按照用户发送的消息，生成完全一样的回复
+    """按照用户发送的消息，生成完全一样的回复
 
     :param event: 已经转化成dict的NapCatQQ事件列表
     :type event: dict

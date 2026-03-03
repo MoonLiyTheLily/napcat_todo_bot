@@ -17,9 +17,7 @@ class ActiveGravity:
 
 
 async def gravity():
-    """
-    重力文案逻辑
-    """
+    """重力文案逻辑"""
     try:
         check_interval = DEFAULT_CONFIG["active"]["gravity"]["check_interval"]
         threshold = DEFAULT_CONFIG["active"]["gravity"]["threshold"]
@@ -47,8 +45,7 @@ async def gravity():
 
 
 async def gravity_sender(user_id: str, last_message_db: LastMessageDatabase):
-    """
-    发送重力文案的函数
+    """发送重力文案的函数
 
     :param user_id: 用户ID
     :param websocket: WebSocket连接

@@ -1,8 +1,6 @@
 # 本类未使用
 class MessageEvent:
-    """
-    标准消息事件类，提供一个处理消息的封装
-    """
+    """标准消息事件类，提供一个处理消息的封装"""
 
     def __init__(self) -> None:
         self.time: int = 0

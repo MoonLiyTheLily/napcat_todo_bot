@@ -23,8 +23,7 @@ class TodoHandler:
         }
 
     async def handle(self, command_event: CommandEvent):
-        """
-        处理todo命令的函数
+        """处理todo命令的函数
 
         :param user_id: 用户id
         :type user_id: str
@@ -54,9 +53,8 @@ class TodoHandler:
         await sender.send(reply)
 
     def help(self, command_event: CommandEvent):
-        """
-        显示待办事项的帮助信息
-        """
+        """显示待办事项的帮助信息"""
+
         help_message = (
             "待办事项命令帮助：\n"
             "/todo add <事项内容> - 添加新的待办事项\n"
@@ -69,9 +67,8 @@ class TodoHandler:
         return reply.build()
 
     def parameter_not_found(self, command_event: CommandEvent):
-        """
-        处理未知参数的函数
-        """
+        """处理未知参数的函数"""
+
         reply = (
             create_reply()
             .to(command_event.user_id)
@@ -80,9 +77,8 @@ class TodoHandler:
         return reply.build()
 
     def default(self, command_event: CommandEvent):
-        """
-        处理无参数情况的函数
-        """
+        """处理无参数情况的函数"""
+
         reply = (
             create_reply()
             .to(command_event.user_id)
@@ -91,8 +87,7 @@ class TodoHandler:
         return reply.build()
 
     def get_todos(self, user_id: str):
-        """
-        获取用户的待办事项列表，并且是直接获得字符串列表
+        """获取用户的待办事项列表，并且是直接获得字符串列表
 
         :param user_id: 用户id
         :type user_id: str
@@ -110,9 +105,8 @@ class TodoHandler:
             return result
 
     def show(self, command_event: CommandEvent):
-        """
-        显示用户的待办事项列表
-        """
+        """显示用户的待办事项列表"""
+
         todos = self.get_todos(command_event.user_id)
         if todos is None or len(todos) == 0:
             message = "您的待办事项列表为空。"
@@ -128,9 +122,8 @@ class TodoHandler:
         return reply.build()
 
     def add(self, command_event: CommandEvent):
-        """
-        添加新的待办事项
-        """
+        """添加新的待办事项"""
+
         # 在本行内任何参数之后的内容都作为待办事项内容
         # 由于原来就是按空格划分的，所以这里用空格作为分隔符链接所有内容
         full_content = " ".join(command_event.parameters[1:])
@@ -150,8 +143,8 @@ class TodoHandler:
         return reply.build()
 
     def delete(self, command_event: CommandEvent):
-        """
-        删除指定的待办事项
+        """删除指定的待办事项
+
         用户指定的是待办的编号，从1开始。待办编号是“此用户的第几个待办”，而不是总数据库里的id
         """
         if len(command_event.parameters) < 2:
@@ -196,8 +189,8 @@ class TodoHandler:
         return reply.build()
 
     def done(self, command_event: CommandEvent):
-        """
-        标记指定的待办事项为已完成
+        """标记指定的待办事项为已完成
+
         用户指定的是待办的编号，从1开始。待办编号是“此用户的第几个待办”，而不是总数据库里的id
         """
         if len(command_event.parameters) < 2:
@@ -250,8 +243,8 @@ class TodoHandler:
         return reply.build()
 
     def undone(self, command_event: CommandEvent):
-        """
-        标记指定的待办事项为未完成
+        """标记指定的待办事项为未完成
+
         用户指定的是待办的编号，从1开始。待办编号是“此用户的第几个待办”，而不是总数据库里的id
         """
         if len(command_event.parameters) < 2:
