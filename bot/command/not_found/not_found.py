@@ -9,8 +9,7 @@ logger = logging.getLogger(__name__)
 class NotFoundHandler:
 
     async def handle(self, command_event: CommandEvent):
-        """
-        没找到命令的话，调用的函数
+        """没找到目标命令时调用的函数
 
         :param user_id: 用户id
         :type user_id: str

@@ -1,7 +1,5 @@
 class TodoItem:
-    """
-    Todo事项类，包含了基本的Todo事项属性
-    """
+    """Todo事项类，包含了基本的Todo事项属性"""
 
     def __init__(
         self,
@@ -22,8 +20,7 @@ class TodoItem:
         self.complete_time = _complete_time
 
     def get_list_string(self):
-        """
-        获取用于聊天显示的字符串
+        """获取用于聊天显示的字符串
 
         :param self: 说明
         """

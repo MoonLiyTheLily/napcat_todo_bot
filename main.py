@@ -23,8 +23,8 @@ logging.basicConfig(
 
 
 async def active_actions():
-    """
-    统一托管所有“主动逻辑”后台任务：
+    """统一托管所有主动逻辑后台任务
+
     - 在这里创建任务
     - 在 finally 中统一 cancel + await 回收
     """
@@ -64,8 +64,8 @@ async def active_actions():
 
 
 def _log_task_result(task: asyncio.Task):
-    """
-    记录异步任务的结果
+    """记录异步任务的结果
+
     :param task: 说明
     :type task: asyncio.Task
     """
@@ -79,8 +79,7 @@ def _log_task_result(task: asyncio.Task):
 
 
 async def handle_event(websocket):
-    """
-    handle_event 的 Docstring
+    """总Handler
 
     :param websocket: 说明
     """
@@ -105,9 +104,7 @@ async def handle_event(websocket):
 
 
 async def main():
-    """
-    main 的 Docstring
-    """
+    """主函数"""
     server = await websockets.serve(
         handle_event,
         DEFAULT_CONFIG["websocket_host"],

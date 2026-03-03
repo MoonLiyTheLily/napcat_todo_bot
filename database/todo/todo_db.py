@@ -7,9 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class TodoDatabase:
-    """
-    Todo数据库类，包含了对todo表的基本操作
-    """
+    """Todo数据库类，包含了对todo表的基本操作"""
 
     def __init__(self) -> None:
         db_path = Path(__file__).parent.parent / "test.db"
@@ -17,8 +15,7 @@ class TodoDatabase:
         self.last_result = None
 
     def is_initialized(self):
-        """
-        检查数据库是否初始化（也就是建立了todo_table）
+        """检查数据库是否初始化（也就是建立了todo_table）
 
         :param self: 说明
         """
@@ -29,8 +26,7 @@ class TodoDatabase:
         return cursor.fetchone() is not None
 
     def create_todo_table(self):
-        """
-        建立表。如果没有初始化，就使用这个函数建表
+        """建立表。如果没有初始化，就使用这个函数建表
 
         :param self: 说明
         """
@@ -48,8 +44,7 @@ class TodoDatabase:
         self.db.commit()
 
     def initialize_table(self):
-        """
-        初始化函数
+        """初始化函数
 
         :param self: 说明
         """
@@ -57,8 +52,7 @@ class TodoDatabase:
             self.create_todo_table()
 
     def sql_result_to_todoitems(self, sql_result) -> list[TodoItem]:
-        """
-        将从数据库中获得的结果转换为todo items的list
+        """将从数据库中获得的结果转换为TodoItem的list
 
         :param sql_result: 从数据库中获得的结果
         :type sql_result: list
@@ -78,8 +72,7 @@ class TodoDatabase:
         return todo_items
 
     def todoitems_to_sql_values(self, todo_items):
-        """
-        将todo items的list转换为可以插入数据库的values
+        """将TodoItem的list转换为可以插入数据库的值
 
         :param todo_items: todo items的list
         :type todo_items: list
@@ -98,8 +91,7 @@ class TodoDatabase:
         return sql_values
 
     def check_todo(self, user_id: str):
-        """
-        返回用户的所有todo，list形式。如果没有，就是None
+        """以List形式返回用户的所有todo。如果没有，就是None
 
         :param self: 说明
         :param user_id: 用户id
@@ -118,8 +110,7 @@ class TodoDatabase:
             return self.sql_result_to_todoitems(data)
 
     def check_all_user(self):
-        """
-        返回所有有待办事项的用户id列表
+        """返回所有有待办事项的用户id列表
 
         :param self: 说明
         """
@@ -136,8 +127,7 @@ class TodoDatabase:
             return user_ids
 
     def add_todo(self, user_id: str, content: str, user_create_time: str):
-        """
-        给定用户和内容，以及发送时间，加入待办表
+        """给定用户和内容，以及发送时间，加入待办表
 
         :param user_id: 用户id
         :type user_id: str
@@ -155,8 +145,7 @@ class TodoDatabase:
         self.db.commit()
 
     def add_todo_todoitem(self, todo_item: TodoItem):
-        """
-        给定一个TodoItem，加入待办表
+        """给定一个TodoItem，加入待办表
 
         :param self: 说明
         :param todo_item: 说明
@@ -188,8 +177,7 @@ class TodoDatabase:
         return None
 
     def complete_todo(self, user_id: str, todo_id: int, complete_time: str = ""):
-        """
-        complete_todo 的 Docstring
+        """设定某个Todo为已完成
 
         :param user_id: 用户id
         :type user_id: str
@@ -215,8 +203,7 @@ class TodoDatabase:
         return None
 
     def uncomplete_todo(self, user_id: str, todo_id: int):
-        """
-        将某个todo标记为未完成
+        """设定某个Todo为未完成
 
         :param user_id: 用户id
         :type user_id: str
@@ -233,8 +220,7 @@ class TodoDatabase:
         return None
 
     def delete_todo(self, user_id: str, todo_id: int):
-        """
-        删除某个todo
+        """删除某个Todo
 
         :param user_id: 用户id
         :type user_id: str

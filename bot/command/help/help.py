@@ -8,8 +8,7 @@ logger = logging.getLogger(__name__)
 
 class HelpHandler:
     async def handle(self, command_event: CommandEvent):
-        """
-        显示帮助信息的函数
+        """显示帮助信息的函数
 
         :param user_id: 用户id
         :type user_id: str
@@ -20,7 +19,9 @@ class HelpHandler:
         help_message = (
             "可用命令列表：\n"
             "/todo - 管理待办事项\n（使用 /todo help 获取更多信息）\n"
-            "/help - 显示此帮助信息"
+            "/help - 显示此帮助信息\n"
+            "stat - 显示现在Session内的消息量\n"
+            "clear - 清除当前Session,，开始新对话"
         )
         reply = create_reply().to(command_event.user_id).text(help_message)
         await sender.send(reply.build())

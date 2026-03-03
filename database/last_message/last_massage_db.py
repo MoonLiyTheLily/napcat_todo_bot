@@ -8,9 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class LastMessageDatabase:
-    """
-    LastMessage数据库类，包含了对last_message表的基本操作
-    """
+    """LastMessage数据库类，包含了对last_message表的基本操作"""
 
     def __init__(self) -> None:
         db_path = Path(__file__).parent.parent / "test.db"
@@ -21,8 +19,7 @@ class LastMessageDatabase:
         self.db.close()
 
     def is_initialized(self):
-        """
-        检查数据库是否初始化（也就是建立了last_message表）
+        """检查数据库是否初始化（也就是建立了last_message表）
 
         :param self: 说明
         """
@@ -33,8 +30,7 @@ class LastMessageDatabase:
         return cursor.fetchone() is not None
 
     def create_last_message_table(self):
-        """
-        建立表。如果没有初始化，就使用这个函数建表
+        """建立表。如果没有初始化，就使用这个函数建表
 
         :param self: 说明
         """
@@ -49,8 +45,7 @@ class LastMessageDatabase:
         self.db.commit()
 
     def initialize_table(self):
-        """
-        初始化函数
+        """初始化函数
 
         :param self: 说明
         """
@@ -61,8 +56,7 @@ class LastMessageDatabase:
     def sql_result_to_last_message_record_items(
         self, sql_result
     ) -> list[LastMessageRecordItem]:
-        """
-        将从数据库中获得的结果转换为last message record items的list
+        """将从数据库中获得的结果转换为LastMessageRecordItems的list
 
         :param self: 说明
         :param sql_result: 从数据库中获得的结果
@@ -76,8 +70,7 @@ class LastMessageDatabase:
         ]
 
     def check_last_message_record(self, user_id: str):
-        """
-        根据user_id获取last message record
+        """根据user_id获取最后消息记录
 
         :param self: 说明
         :param user_id: 用户id
@@ -93,8 +86,7 @@ class LastMessageDatabase:
             return None
 
     def add_last_message_record(self, user_id: str, send_time: str):
-        """
-        添加last message record
+        """添加最后消息记录
 
         :param self: 说明
         :param user_id: 用户id
@@ -108,8 +100,8 @@ class LastMessageDatabase:
         self.db.commit()
 
     def update_last_message_record(self, user_id: str, send_time: str):
-        """
-        更新last message record，如果没有就插入
+        """更新最后消息记录，如果没有就插入
+
         另外由于这个函数在main里也有调用，所以同时也处理删除过于老旧的记录
 
         :param self: 说明
@@ -134,8 +126,7 @@ class LastMessageDatabase:
         logger.info("已更新用户 %s 的最后一次信息，发送时间: %s", user_id, send_time)
 
     def delete_last_message_record(self, user_id: str):
-        """
-        删除last message record
+        """根据user_id删除最后消息记录
 
         :param self: 说明
         :param user_id: 用户id
@@ -147,8 +138,9 @@ class LastMessageDatabase:
     def check_all_user(
         self, threshold: int = 60, earliest: int = 1440
     ) -> list[str] | None:
-        """
-        返回所有有最近消息记录的用户id列表，默认参数是过去1天内发送过消息，但是过去1小时内没有
+        """返回所有有最近消息记录的用户id列表
+
+        默认参数是过去1天内发送过消息，但是过去1小时内没有
 
         :param threshold: 多少分钟内发送过消息，默认60分钟
         :param earliest: 最早多少分钟之前发送过消息，默认为1天
@@ -182,8 +174,7 @@ class LastMessageDatabase:
             return user_ids
 
     def close(self):
-        """
-        关闭数据库连接
+        """关闭数据库连接
 
         :param self: 说明
         """

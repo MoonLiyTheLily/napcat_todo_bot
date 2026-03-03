@@ -5,8 +5,9 @@ import websockets
 logger = logging.getLogger(__name__)
 
 
-# 本类未使用
 class MessageSender:
+    """信息发送器"""
+
     def __init__(self):
         self.websocket: websockets.ServerConnection
 

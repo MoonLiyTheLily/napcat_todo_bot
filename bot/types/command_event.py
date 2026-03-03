@@ -1,7 +1,5 @@
 class CommandEvent:
-    """
-    命令事件类，提供一个标准化的纯文本命令封装
-    """
+    """命令事件类，提供一个标准化的纯文本命令封装"""
 
     def __init__(
         self, _user_id="", _command="", _parameter=None, _user_send_time=""
@@ -18,8 +16,7 @@ class CommandEvent:
         return f"<CommandEvent from User: {self.user_id} Command:{self.command} Parameter:{self.parameters}>"
 
     def is_empty(self) -> bool:
-        """
-        判断命令事件是不是空的
+        """判断命令事件是不是空的
 
         :param self: 说明
         :return: 说明

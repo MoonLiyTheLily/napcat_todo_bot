@@ -45,8 +45,8 @@ class ReplyMessage:
 
 
 def create_reply() -> ReplyMessage:
-    """
-    创建回复消息
+    """创建回复消息
+
     :param to: 回复的目标用户ID
     :type to: str
     :return: 回复消息对象
