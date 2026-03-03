@@ -2,25 +2,30 @@ import logging
 import asyncio
 import datetime
 from pathlib import Path
-import websockets
 from database import LastMessageDatabase
+from bot.apis.send_message import sender
 from bot.apis.create_reply import create_reply
 from bot.config.config import DEFAULT_CONFIG
 
 logger = logging.getLogger(__name__)
 
 
-async def gravity(websocket):
+# 本类未使用
+class ActiveGravity:
+    def __init__(self) -> None:
+        self.last_message_db = LastMessageDatabase()
+
+
+async def gravity():
     """
     重力文案逻辑
     """
-
-    last_message_db = LastMessageDatabase()
     try:
         check_interval = DEFAULT_CONFIG["active"]["gravity"]["check_interval"]
         threshold = DEFAULT_CONFIG["active"]["gravity"]["threshold"]
         while True:
             try:
+                last_message_db = LastMessageDatabase()
                 # 获取所有用户的最后消息记录
                 # 如果距离上次消息超过一定时长，发送重力文案
                 # 为了测试可以改成1分钟，默认是60分钟
@@ -28,22 +33,20 @@ async def gravity(websocket):
                 # user_ids = last_message_db.check_all_user(threshold=1)
                 if user_ids is not None:
                     for user_id in user_ids:
-                        await gravity_sender(websocket, user_id, last_message_db)
+                        asyncio.create_task(gravity_sender(user_id, last_message_db))
                 await asyncio.sleep(check_interval)  # 默认每60分钟检查一次
-            except (websockets.ConnectionClosedError, websockets.ConnectionClosed):
-                logger.error("WebSocket连接已关闭，停止重力文案通知")
-                return
             except asyncio.CancelledError:
                 logger.info("重力文案通知任务已取消")
                 raise
             except Exception as e:
-                logger.exception("重力文案通知出现错误: %s，将在1分钟后重试", str(e))
+                logger.exception("重力文案通知出现错误: %s", str(e))
                 raise
     finally:
-        last_message_db.close()
+        if last_message_db:
+            last_message_db.close()
 
 
-async def gravity_sender(websocket, user_id: str, last_message_db: LastMessageDatabase):
+async def gravity_sender(user_id: str, last_message_db: LastMessageDatabase):
     """
     发送重力文案的函数
 
@@ -73,15 +76,14 @@ async def gravity_sender(websocket, user_id: str, last_message_db: LastMessageDa
             sleep_time = max(2, reply_length / 10)
             await asyncio.sleep(sleep_time)
             # 模拟打字的时间，以岛村之刃按照！、？、。的分划，一行最多需要11秒
-            await websocket.send(reply)
+            await sender.send(reply)
             logger.info(
                 "已发送重力文案给用户 %s: %s", user_id, line.strip()[0:10] + "..."
             )
         logger.info("已完成发送重力文案给用户 %s的任务", user_id)
-    except (websockets.ConnectionClosedError, websockets.ConnectionClosed):
-        logger.error("WebSocket连接已关闭，无法发送重力文案")
     except Exception as e:
         logger.exception("发送重力文案时出现错误: %s", str(e))
+        raise
     finally:
         if gravity_file:
             gravity_file.close()

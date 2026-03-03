@@ -2,13 +2,12 @@ import asyncio
 import json
 import logging
 import sys
-import datetime
 import websockets
+from bot.apis.send_message import sender
 from bot.handlers import UniversalHandler
 from bot.active.todo_notifier import todo_notifier
 from bot.active.gravity import gravity
 from bot.config.config import DEFAULT_CONFIG
-from database import LastMessageDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ logging.basicConfig(
 )
 
 
-async def active_actions(websocket):
+async def active_actions():
     """
     统一托管所有“主动逻辑”后台任务：
     - 在这里创建任务
@@ -31,10 +30,8 @@ async def active_actions(websocket):
     """
     tasks: list[asyncio.Task] = []
     try:
-        tasks.append(
-            asyncio.create_task(todo_notifier(websocket), name="todo_notifier")
-        )
-        tasks.append(asyncio.create_task(gravity(websocket), name="gravity"))
+        tasks.append(asyncio.create_task(todo_notifier(), name="todo_notifier"))
+        tasks.append(asyncio.create_task(gravity(), name=""))
 
         # 主动逻辑任务，都在此处 append
         # tasks.append(asyncio.create_task(other_active_job(websocket), name="other_active_job"))
@@ -87,9 +84,9 @@ async def handle_event(websocket):
 
     :param websocket: 说明
     """
+    sender.websocket = websocket
     universal_handler = UniversalHandler()
-    last_message_db = LastMessageDatabase()
-    active_task = asyncio.create_task(active_actions(websocket))
+    active_task = asyncio.create_task(active_actions())
     active_task.add_done_callback(_log_task_result)
     try:
         async for message in websocket:
@@ -97,26 +94,9 @@ async def handle_event(websocket):
             # 处理消息事件
             if event.get("post_type") == "message":
                 try:
-                    last_message_db.initialize_table()
-                    last_message_db.update_last_message_record(
-                        event["user_id"],
-                        datetime.datetime.fromtimestamp(event["time"]).strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        ),
-                    )
-                    # 更新最后消息记录
-                    reply = await universal_handler.handle(event)
+                    asyncio.create_task(universal_handler.handle(event))
                 except Exception as e:
                     logger.exception("处理消息事件时出现错误: %s", str(e))
-                    reply = None
-                if reply is not None:
-                    try:
-                        await websocket.send(reply)
-                    except (
-                        websockets.ConnectionClosedError,
-                        websockets.ConnectionClosed,
-                    ):
-                        logger.error("发送回复时出现错误: Websocket连接已关闭")
     except (websockets.ConnectionClosedError, websockets.ConnectionClosed):
         logger.info("WebSocket连接已关闭")
     finally:

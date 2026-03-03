@@ -1,6 +1,7 @@
 import logging
 from bot.types import CommandEvent, TodoItem
 from bot.apis.create_reply import create_reply
+from bot.apis.send_message import sender
 from database import TodoDatabase
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,6 @@ class TodoHandler:
         :param parameters: 解析获得的参数
         :type parameters: list
         """
-        logger.info("handle已执行")
 
         if len(command_event.parameters) == 0:
             handler = self.parameter_handlers["default"]
@@ -51,8 +51,7 @@ class TodoHandler:
                 .text("todo_handler已执行，但未找到对应的处理函数。")
                 .build()
             )
-
-        return reply
+        await sender.send(reply)
 
     def help(self, command_event: CommandEvent):
         """

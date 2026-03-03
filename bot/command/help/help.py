@@ -1,6 +1,7 @@
 import logging
 from bot.types.command_event import CommandEvent
 from bot.apis.create_reply import create_reply
+from bot.apis.send_message import sender
 
 logger = logging.getLogger(__name__)
 
@@ -22,4 +23,4 @@ class HelpHandler:
             "/help - 显示此帮助信息"
         )
         reply = create_reply().to(command_event.user_id).text(help_message)
-        return reply.build()
+        await sender.send(reply.build())

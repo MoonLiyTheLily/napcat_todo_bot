@@ -162,7 +162,7 @@ class LastMessageDatabase:
             logger.warning("参数threshold必须小于earliest")
             return None
         else:
-            logger.info("检查所有有最近消息记录的的用户id")
+            logger.info("所有%d到%d分钟前发送过消息的用户id", earliest, threshold)
 
             latest_time = datetime.datetime.now() - datetime.timedelta(
                 minutes=threshold

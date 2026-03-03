@@ -1,6 +1,8 @@
 import logging
+import datetime
 from bot.handlers import CommandHandler
 from bot.handlers import ChatHandler
+from database.last_message.last_massage_db import LastMessageDatabase
 from bot.handlers.command.command_resolver import is_command
 
 logger = logging.getLogger(__name__)
@@ -26,6 +28,7 @@ class UniversalHandler:
     def __init__(self) -> None:
         self.command_handler = CommandHandler()
         self.chat_handler = ChatHandler()
+        self.last_message_db = LastMessageDatabase()
 
     async def handle(self, event: dict):
         """
@@ -38,7 +41,15 @@ class UniversalHandler:
         if not is_private_chat(event):
             logger.info("非私聊消息，忽略处理")
             return None
+
+        self.last_message_db.initialize_table()
+        self.last_message_db.update_last_message_record(
+            event["user_id"],
+            datetime.datetime.fromtimestamp(event["time"]).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+        )
         if is_command(event):
-            return await self.command_handler.handle(event)
+            await self.command_handler.handle(event)
         else:
-            return await self.chat_handler.handle(event)
+            await self.chat_handler.handle(event)
