@@ -1,6 +1,7 @@
 import logging
 from bot.types import CommandEvent
 from bot.apis.create_reply import create_reply
+from bot.apis.send_message import sender
 
 logger = logging.getLogger(__name__)
 
@@ -23,4 +24,4 @@ class NotFoundHandler:
             .to(command_event.user_id)
             .text("未找到命令。/help 可以查看目前支持的命令列表。")
         )
-        return reply.build()
+        await sender.send(reply.build())

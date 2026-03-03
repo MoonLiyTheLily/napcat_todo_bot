@@ -3,6 +3,8 @@ import bot.command
 from bot.handlers.command.command_resolver import command_resolver
 from bot.types import CommandEvent
 
+logger = logging.getLogger(__name__)
+
 
 class CommandHandler:
     """
@@ -28,7 +30,7 @@ class CommandHandler:
         :param command_event: 说明
         :type command_event: CommandEvent
         """
-        return await self.handle_command_event(command_resolver(event))
+        await self.handle_command_event(command_resolver(event))
 
     async def handle_command_event(self, command_event: CommandEvent):
         """
@@ -40,5 +42,6 @@ class CommandHandler:
         :param command_event: 说明
         :type command_event: CommandEvent
         """
+        logger.debug("CommandHandler已执行")
         handler = self.commands.get(command_event.command, self.commands["not_found"])
-        return await handler(command_event)
+        await handler(command_event)

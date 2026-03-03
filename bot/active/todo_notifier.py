@@ -3,13 +3,14 @@ import asyncio
 import websockets
 from database import TodoDatabase
 from bot.apis.create_reply import create_reply
+from bot.apis.send_message import sender
 from bot.types import TodoItem
 from bot.config.config import DEFAULT_CONFIG
 
 logger = logging.getLogger(__name__)
 
 
-async def todo_notifier(websocket):
+async def todo_notifier():
     """
     todo_notifier 的 Docstring
     """
@@ -31,7 +32,7 @@ async def todo_notifier(websocket):
                     if len(user_todos) > 0:
                         message = "您有以下待办事项未完成：\n" + "\n".join(user_todos)
                         reply = create_reply().to(user_id).text(message).build()
-                        await websocket.send(reply)
+                        await sender.send(reply)
                         logger.info("已发送待办事项通知给用户%s", user_id)
             db.close()
             await asyncio.sleep(notify_interval)  # 默认半小时检查一次

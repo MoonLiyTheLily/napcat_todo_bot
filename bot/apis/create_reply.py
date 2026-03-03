@@ -33,6 +33,7 @@ class ReplyMessage:
         return self
 
     def build(self):
+        assert self.user_id != "", "user_id不能为空"
         reply = {
             "action": self.action,
             "params": {

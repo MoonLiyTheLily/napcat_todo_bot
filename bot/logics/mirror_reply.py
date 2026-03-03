@@ -1,10 +1,12 @@
 import json
 import logging
+from bot.apis.send_message import sender
 
 logger = logging.getLogger(__name__)
 
 
-def create_mirror_reply(event: dict, mirror_tip: bool = False):
+# 本函数保留了最原始的生成返回消息逻辑，以供有关消息模块编写时参考
+async def create_mirror_reply(event: dict, mirror_tip: bool = False):
     """
     按照用户发送的消息，生成完全一样的回复
 
@@ -65,4 +67,5 @@ def create_mirror_reply(event: dict, mirror_tip: bool = False):
             "message": reply_messages,
         },
     }
-    return json.dumps(reply, ensure_ascii=False)
+    await sender.send(json.dumps(reply, ensure_ascii=False))
+    # return json.dumps(reply, ensure_ascii=False)
