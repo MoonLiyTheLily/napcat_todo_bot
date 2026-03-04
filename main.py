@@ -1,8 +1,8 @@
 import asyncio
 import json
 import logging
-import sys
 import websockets
+import colorlog
 from bot.apis.send_message import sender
 from bot.handlers import UniversalHandler
 from bot.active.todo_notifier import todo_notifier
@@ -11,12 +11,29 @@ from bot.config.config import DEFAULT_CONFIG
 
 logger = logging.getLogger(__name__)
 
+colored_log_handler = colorlog.StreamHandler()
+colored_log_handler.setFormatter(
+    colorlog.ColoredFormatter(
+        "%(asctime)s [%(log_color)s%(levelname)s%(reset)s] [%(name)s] - %(message)s",
+        # " %(log_color)s%(levelname)s%(reset)s - %(message)s",
+        datefmt="%m-%d %H:%M:%S",
+        # datefmt="%m-%d %I:%M:%S %p",
+        log_colors={
+            "DEBUG": "cyan",
+            "INFO": "green",
+            "WARNING": "yellow",
+            "ERROR": "red",
+            "CRITICAL": "bold_red",
+        },
+    )
+)
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] [%(name)s] : %(message)s",
-    datefmt="%m-%d %H:%M:%S",
+    # format="%(asctime)s [%(levelname)s] [%(name)s] : %(message)s",
+    # datefmt="%m-%d %H:%M:%S",
     handlers=[
-        logging.StreamHandler(sys.stdout),
+        colored_log_handler
+        # logging.StreamHandler(sys.stdout),
         # logging.FileHandler("logs/app.log", encoding="utf-8"),
     ],
 )

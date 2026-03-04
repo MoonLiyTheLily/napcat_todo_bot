@@ -33,13 +33,13 @@ class TodoHandler:
 
         if len(command_event.parameters) == 0:
             handler = self.parameter_handlers["default"]
-            logger.info("第一参数: None")
+            logger.debug("第一参数: None")
         else:
             param = command_event.parameters[0]
             handler = self.parameter_handlers.get(
                 param, self.parameter_handlers["parameter_not_found"]
             )
-            logger.info("第一参数: %s", param)
+            logger.debug("第一参数: %s", param)
 
         if handler is not None:
             reply = handler(command_event)
