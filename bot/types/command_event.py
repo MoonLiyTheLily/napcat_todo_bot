@@ -2,7 +2,11 @@ class CommandEvent:
     """命令事件类，提供一个标准化的纯文本命令封装"""
 
     def __init__(
-        self, _user_id="", _command="", _parameter=None, _user_send_time=""
+        self,
+        _user_id: int,
+        _command: str = "",
+        _parameter: list[str] | None = None,
+        _user_send_time="",
     ) -> None:
         self.user_id = _user_id
         self.command = _command
@@ -22,6 +26,6 @@ class CommandEvent:
         :return: 说明
         :rtype: bool
         """
-        if self.user_id == "" or self.command == "" or self.parameters is None:
+        if self.user_id is None or self.command == "" or self.parameters is None:
             return True
         return False

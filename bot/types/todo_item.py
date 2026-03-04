@@ -4,7 +4,7 @@ class TodoItem:
     def __init__(
         self,
         _database_id: int,
-        _user_id: str,
+        _user_id: int,
         _content: str,
         _is_done: bool,
         _user_create_time: str,

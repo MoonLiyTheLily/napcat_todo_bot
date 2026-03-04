@@ -11,7 +11,7 @@ class HelpHandler:
         """显示帮助信息的函数
 
         :param user_id: 用户id
-        :type user_id: str
+        :type user_id: int
         :param command_event: 解析获得的参数
         :type command_event: CommandEvent
         """

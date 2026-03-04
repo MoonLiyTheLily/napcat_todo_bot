@@ -90,12 +90,12 @@ class TodoDatabase:
             sql_values.append(values)
         return sql_values
 
-    def check_todo(self, user_id: str):
+    def check_todo(self, user_id: int):
         """以List形式返回用户的所有todo。如果没有，就是None
 
         :param self: 说明
         :param user_id: 用户id
-        :type user_id: str
+        :type user_id: int
         """
         if not self.is_initialized():
             return None
@@ -126,11 +126,11 @@ class TodoDatabase:
             logger.info("获得的用户id列表: %s", user_ids)
             return user_ids
 
-    def add_todo(self, user_id: str, content: str, user_create_time: str):
+    def add_todo(self, user_id: int, content: str, user_create_time: str):
         """给定用户和内容，以及发送时间，加入待办表
 
         :param user_id: 用户id
-        :type user_id: str
+        :type user_id: int
         :param content: 待办内容
         :type content: str
         :param user_create_time: 用户创建待办的时间，也就是发送时间
@@ -166,7 +166,7 @@ class TodoDatabase:
         )
         self.db.commit()
 
-    def modify_todo(self, user_id: str, todo_id: int, new_content: str):
+    def modify_todo(self, user_id: int, todo_id: int, new_content: str):
         cursor = self.db.cursor()
         cursor.execute(
             "UPDATE todo_table SET content=?, updated_at=datetime('now', 'localtime')\
@@ -176,11 +176,11 @@ class TodoDatabase:
         self.db.commit()
         return None
 
-    def complete_todo(self, user_id: str, todo_id: int, complete_time: str = ""):
+    def complete_todo(self, user_id: int, todo_id: int, complete_time: str = ""):
         """设定某个Todo为已完成
 
         :param user_id: 用户id
-        :type user_id: str
+        :type user_id: int
         :param todo_id: todo事项在数据库里的唯一id
         :type todo_id: int
         :param complete_time: 完成时间
@@ -202,11 +202,11 @@ class TodoDatabase:
         self.db.commit()
         return None
 
-    def uncomplete_todo(self, user_id: str, todo_id: int):
+    def uncomplete_todo(self, user_id: int, todo_id: int):
         """设定某个Todo为未完成
 
         :param user_id: 用户id
-        :type user_id: str
+        :type user_id: int
         :param todo_id: todo事项在数据库里的唯一id
         :type todo_id: int
         """
@@ -219,11 +219,11 @@ class TodoDatabase:
         self.db.commit()
         return None
 
-    def delete_todo(self, user_id: str, todo_id: int):
+    def delete_todo(self, user_id: int, todo_id: int):
         """删除某个Todo
 
         :param user_id: 用户id
-        :type user_id: str
+        :type user_id: int
         :param todo_id: todo事项在数据库里的唯一id
         :type todo_id: int
         """

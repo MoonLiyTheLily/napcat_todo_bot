@@ -4,10 +4,10 @@ import json
 class ReplyMessage:
     def __init__(self) -> None:
         self.action: str = "send_private_msg"
-        self.user_id: str = ""
+        self.user_id: int | None = None
         self.message: list = []
 
-    def to(self, _user_id: str):
+    def to(self, _user_id: int):
         self.user_id = _user_id
         return self
 
@@ -33,7 +33,7 @@ class ReplyMessage:
         return self
 
     def build(self):
-        assert self.user_id != "", "user_id不能为空"
+        assert self.user_id is not None, "user_id不能为空"
         reply = {
             "action": self.action,
             "params": {

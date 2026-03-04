@@ -26,7 +26,7 @@ class TodoHandler:
         """处理todo命令的函数
 
         :param user_id: 用户id
-        :type user_id: str
+        :type user_id: int
         :param parameters: 解析获得的参数
         :type parameters: list
         """
@@ -86,11 +86,11 @@ class TodoHandler:
         )
         return reply.build()
 
-    def get_todos(self, user_id: str):
+    def get_todos(self, user_id: int):
         """获取用户的待办事项列表，并且是直接获得字符串列表
 
         :param user_id: 用户id
-        :type user_id: str
+        :type user_id: int
         :return: 待办事项列表
         :rtype: list
         """
