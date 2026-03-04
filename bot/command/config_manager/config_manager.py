@@ -121,7 +121,7 @@ class ConfigManagerHandler:
             len(command_event.parameters) == 2 and command_event.parameters[0] == "get"
         ):
             reply = self.get(command_event.parameters[1])
-            await sender.send(reply.build())
+            await sender.send(reply.to(user_id).build())
         elif (
             len(command_event.parameters) == 3 and command_event.parameters[0] == "set"
         ):
