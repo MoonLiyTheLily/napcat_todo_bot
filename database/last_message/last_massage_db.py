@@ -69,7 +69,7 @@ class LastMessageDatabase:
             for row in sql_result
         ]
 
-    def check_last_message_record(self, user_id: str):
+    def check_last_message_record(self, user_id: int):
         """根据user_id获取最后消息记录
 
         :param self: 说明
@@ -85,7 +85,7 @@ class LastMessageDatabase:
         else:
             return None
 
-    def add_last_message_record(self, user_id: str, send_time: str):
+    def add_last_message_record(self, user_id: int, send_time: str):
         """添加最后消息记录
 
         :param self: 说明
@@ -99,7 +99,7 @@ class LastMessageDatabase:
         )
         self.db.commit()
 
-    def update_last_message_record(self, user_id: str, send_time: str):
+    def update_last_message_record(self, user_id: int, send_time: str):
         """更新最后消息记录，如果没有就插入
 
         另外由于这个函数在main里也有调用，所以同时也处理删除过于老旧的记录
@@ -125,7 +125,7 @@ class LastMessageDatabase:
         self.db.commit()
         logger.info("已更新用户 %s 的最后一次信息，发送时间: %s", user_id, send_time)
 
-    def delete_last_message_record(self, user_id: str):
+    def delete_last_message_record(self, user_id: int):
         """根据user_id删除最后消息记录
 
         :param self: 说明

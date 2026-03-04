@@ -12,7 +12,7 @@ class NotFoundHandler:
         """没找到目标命令时调用的函数
 
         :param user_id: 用户id
-        :type user_id: str
+        :type user_id: int
         :param parameters: 解析获得的参数
         :type parameters: list
         """

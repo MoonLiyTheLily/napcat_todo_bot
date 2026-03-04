@@ -10,7 +10,7 @@ class MessageEvent:
         self.message_type: str = "None"
         self.sub_type: str = "None"
         self.message_id: int = 0
-        self.user_id: int = 0
+        self.user_id: int
         self.message = None
 
     def dump_to_json(self):

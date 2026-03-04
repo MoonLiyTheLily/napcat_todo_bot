@@ -44,7 +44,7 @@ async def gravity():
             last_message_db.close()
 
 
-async def gravity_sender(user_id: str, last_message_db: LastMessageDatabase):
+async def gravity_sender(user_id: int, last_message_db: LastMessageDatabase):
     """发送重力文案的函数
 
     :param user_id: 用户ID

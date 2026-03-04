@@ -15,6 +15,7 @@ class CommandHandler:
             "todo": bot.command.TodoHandler().handle,
             "help": bot.command.HelpHandler().handle,
             "not_found": bot.command.NotFoundHandler().handle,
+            "config": bot.command.ConfigManagerHandler().handle,
         }
         # 命令需要在command里导出其handler，再在此处注册
 
@@ -26,7 +27,7 @@ class CommandHandler:
 
         :param self: 说明
         :param user_id: 说明
-        :type user_id: str
+        :type user_id: int
         :param command_event: 说明
         :type command_event: CommandEvent
         """
