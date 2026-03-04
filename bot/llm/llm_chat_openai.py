@@ -112,6 +112,7 @@ class LLMChatHandlerOpenAI:
                 .text(f"现在的Session内有{len(target_session.messages_list)}条消息。")
                 .build()
             )
+            logger.info("LLMChat已响应来自 %s 的命令 %s", user_id, user_message)
             return
         # 如果是清除Session就延后一下在这里查找完顺便执行
         if user_message == "clear":
@@ -119,6 +120,7 @@ class LLMChatHandlerOpenAI:
             await sender.send(
                 create_reply().to(user_id).text("已经清除当前Session的消息记录").build()
             )
+            logger.info("LLMChat已响应来自 %s 的命令 %s", user_id, user_message)
             return
 
         raw_reply = await target_session.chat(user_message)

@@ -52,12 +52,12 @@ def command_resolver(event: dict):
                 )
             else:
                 logger.info("解析失败")
-                return CommandEvent()
+                return None
         else:
             logger.info("非文本消息，不是命令，解析")
-            return CommandEvent()
+            return None
     else:
-        return CommandEvent()
+        return None
 
 
 def command_resolver_dict(event: dict):

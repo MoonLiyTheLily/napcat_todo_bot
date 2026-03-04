@@ -137,7 +137,7 @@ class LastMessageDatabase:
 
     def check_all_user(
         self, threshold: int = 60, earliest: int = 1440
-    ) -> list[str] | None:
+    ) -> list[int] | None:
         """返回所有有最近消息记录的用户id列表
 
         默认参数是过去1天内发送过消息，但是过去1小时内没有

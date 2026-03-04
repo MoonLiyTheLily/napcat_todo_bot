@@ -106,7 +106,8 @@ class TodoDatabase:
             cursor = self.db.cursor()
             cursor.execute("SELECT * FROM todo_table WHERE user_id=?", (user_id,))
             data = cursor.fetchall()
-            logger.info("获得的待办事项数据: %s", data)
+            logger.debug("获得的待办事项数据: %s", data)
+            logger.info("获得的待办事项数: %d", len(data))
             return self.sql_result_to_todoitems(data)
 
     def check_all_user(self):
