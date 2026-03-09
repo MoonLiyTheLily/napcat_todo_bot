@@ -22,6 +22,8 @@ class HelpHandler(BasicPlugin):
         help_message = (
             "可用命令列表：\n"
             "/todo - 管理待办事项\n（使用 /todo help 获取更多信息）\n"
+            "/config - 仅管理员可用，修改配置\n"
+            "/pluginreload - 仅管理员可用，重载插件\n"
             "/help - 显示此帮助信息\n"
             "stat - 显示现在Session内的消息量\n"
             "clear - 清除当前Session,，开始新对话"

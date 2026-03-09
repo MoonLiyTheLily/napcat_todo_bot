@@ -4,8 +4,8 @@ from bot.apis.create_reply import create_reply
 from bot.apis.send_message import sender
 from bot.plugin.basic_plugin import BasicPlugin
 from bot.plugin.manager.plugin_registry import register_command
-
 from bot.plugin.manager.plugin_manager import PluginManager
+from bot.config.config import DEFAULT_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +18,13 @@ class PluginManagerInterface(BasicPlugin):
 
         目前这个handler除了重载插件没有别的用处
         """
+        user_id = command_event.user_id
+        admin_user_id = DEFAULT_CONFIG["admin_user_id"]
+        if user_id != admin_user_id:
+            reply = create_reply().to(user_id).text("您不是管理员，不能使用此命令。")
+            # logger.info("管理员用户id:%s 当前用户id:%s", admin_user_id, user_id)
+            # print(type(user_id), "H", type(admin_user_id))
+            await sender.send(reply.build())
         logger.info("开始重载插件")
         PluginManager._instances[0].reload()
         logger.info("重载插件完成")

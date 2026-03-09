@@ -70,6 +70,7 @@ class PluginManager:
 
     def load(self):
         """加载插件"""
+
         self.plugin_list.clear()
         self.module_list.clear()
 
