@@ -2,8 +2,8 @@ import logging
 import datetime
 from bot.handlers import CommandHandler
 from bot.handlers import ChatHandler
-from database.last_message.last_massage_db import LastMessageDatabase
 from bot.handlers.command.command_resolver import is_command
+from database.last_message.last_massage_db import LastMessageDatabase
 
 logger = logging.getLogger(__name__)
 

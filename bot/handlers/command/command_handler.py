@@ -1,7 +1,7 @@
 import logging
-import bot.command
 from bot.handlers.command.command_resolver import command_resolver
 from bot.types import CommandEvent
+from bot.plugin.manager.plugin_registry import command_registry
 
 logger = logging.getLogger(__name__)
 
@@ -11,18 +11,13 @@ class CommandHandler:
 
     def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
-        self.commands = {
-            "todo": bot.command.TodoHandler().handle,
-            "help": bot.command.HelpHandler().handle,
-            "not_found": bot.command.NotFoundHandler().handle,
-            "config": bot.command.ConfigManagerHandler().handle,
-        }
+        self.commands = command_registry
         # 命令需要在command里导出其handler，再在此处注册
 
     async def handle(self, event: dict):
         await self.handle_command_event(command_resolver(event))
 
-    async def handle_command_event(self, command_event: CommandEvent):
+    async def handle_command_event(self, command_event: CommandEvent | None):
         """处理所有的命令
 
         :param self: 说明
@@ -31,6 +26,8 @@ class CommandHandler:
         :param command_event: 说明
         :type command_event: CommandEvent
         """
+        if command_event is None:
+            return
         logger.debug("CommandHandler已执行")
         handler = self.commands.get(command_event.command, self.commands["not_found"])
         await handler(command_event)

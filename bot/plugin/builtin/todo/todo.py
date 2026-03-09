@@ -2,12 +2,14 @@ import logging
 from bot.types import CommandEvent, TodoItem
 from bot.apis.create_reply import create_reply
 from bot.apis.send_message import sender
+from bot.plugin.basic_plugin import BasicPlugin
+from bot.plugin.manager.plugin_registry import register_command
 from database import TodoDatabase
 
 logger = logging.getLogger(__name__)
 
 
-class TodoHandler:
+class TodoHandler(BasicPlugin):
     def __init__(self):
         self.todo_db = TodoDatabase()
         self.todo_db.initialize_table()
@@ -22,6 +24,7 @@ class TodoHandler:
             "undone": self.undone,
         }
 
+    @register_command("todo")
     async def handle(self, command_event: CommandEvent):
         """处理todo命令的函数
 
