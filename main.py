@@ -8,6 +8,7 @@ from bot.handlers import UniversalHandler
 from bot.active.todo_notifier import todo_notifier
 from bot.active.gravity import gravity
 from bot.config.config import DEFAULT_CONFIG
+from bot.plugin.manager.plugin_manager import PluginManager
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,9 @@ async def handle_event(websocket):
 
 async def main():
     """主函数"""
+    # 初始化插件管理器
+    p = PluginManager()
+    p.load()
     server = await websockets.serve(
         handle_event,
         DEFAULT_CONFIG["websocket_host"],
@@ -139,6 +143,7 @@ async def main():
 
 if __name__ == "__main__":
     try:
+
         asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("程序已终止")

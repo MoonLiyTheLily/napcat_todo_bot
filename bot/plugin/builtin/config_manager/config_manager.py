@@ -4,6 +4,8 @@ from bot.types.command_event import CommandEvent
 from bot.config.config import DEFAULT_CONFIG, DEFAULT_CONFIG_BACKUP
 from bot.apis.create_reply import create_reply
 from bot.apis.send_message import sender
+from bot.plugin.basic_plugin import BasicPlugin
+from bot.plugin.manager.plugin_registry import register_command
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +66,7 @@ class ConfigManager:
         logger.info("设置项 %s 已经更改为 %s.", resolved_path[-1], value)
 
 
-class ConfigManagerHandler:
+class ConfigManagerHandler(BasicPlugin):
     def __init__(self) -> None:
         self.config_manager: ConfigManager = ConfigManager()
 
@@ -104,6 +106,7 @@ class ConfigManagerHandler:
             )
         return reply
 
+    @register_command("config")
     async def handle(self, command_event: CommandEvent):
         user_id = command_event.user_id
         admin_user_id = DEFAULT_CONFIG["admin_user_id"]

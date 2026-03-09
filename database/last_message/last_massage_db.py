@@ -38,17 +38,13 @@ class LastMessageDatabase:
         # user_id设置为唯一，方便后续的插入/更新操作（如果user_id已经存在，就更新send_time）
         cursor.execute(
             "CREATE TABLE IF NOT EXISTS last_message (\
-                id INTEGER PRIMARY KEY,\
-                user_id VARCHAR(15) NOT NULL UNIQUE,\
+                user_id VARCHAR(15) NOT NULL PRIMARY KEY,\
                 send_time VARCHAR(30) DEFAULT CURRENT_TIMESTAMP)"
         )
         self.db.commit()
 
     def initialize_table(self):
-        """初始化函数
-
-        :param self: 说明
-        """
+        """初始化函数"""
         if not self.is_initialized():
             self.create_last_message_table()
             self.db.commit()
@@ -58,7 +54,6 @@ class LastMessageDatabase:
     ) -> list[LastMessageRecordItem]:
         """将从数据库中获得的结果转换为LastMessageRecordItems的list
 
-        :param self: 说明
         :param sql_result: 从数据库中获得的结果
         """
         return [
@@ -72,7 +67,6 @@ class LastMessageDatabase:
     def check_last_message_record(self, user_id: int):
         """根据user_id获取最后消息记录
 
-        :param self: 说明
         :param user_id: 用户id
         """
         cursor = self.db.cursor()
@@ -88,7 +82,6 @@ class LastMessageDatabase:
     def add_last_message_record(self, user_id: int, send_time: str):
         """添加最后消息记录
 
-        :param self: 说明
         :param user_id: 用户id
         :param send_time: 发送时间
         """
@@ -103,8 +96,6 @@ class LastMessageDatabase:
         """更新最后消息记录，如果没有就插入
 
         另外由于这个函数在main里也有调用，所以同时也处理删除过于老旧的记录
-
-        :param self: 说明
         :param user_id: 用户id
         :param send_time: 发送时间
         """
@@ -114,21 +105,20 @@ class LastMessageDatabase:
             (user_id, send_time),
         )
         cursor.execute(
-            "SELECT id FROM last_message WHERE send_time < ?",
-            (datetime.datetime.now() - datetime.timedelta(days=1),),
+            "SELECT user_id FROM last_message WHERE send_time < ?",
+            (datetime.datetime.now() - datetime.timedelta(hours=12),),
         )
         rows = cursor.fetchall()
         if rows:
             for row in rows:
                 self.delete_last_message_record(row[0])
-                logger.info("已删除过于老旧的消息记录，来自用户: %s", row[1])
+                logger.info("已删除过于老旧的消息记录，来自用户: %s", row[0])
         self.db.commit()
         logger.info("已更新用户 %s 的最后一次信息，发送时间: %s", user_id, send_time)
 
     def delete_last_message_record(self, user_id: int):
         """根据user_id删除最后消息记录
 
-        :param self: 说明
         :param user_id: 用户id
         """
         cursor = self.db.cursor()
@@ -174,8 +164,5 @@ class LastMessageDatabase:
             return user_ids
 
     def close(self):
-        """关闭数据库连接
-
-        :param self: 说明
-        """
+        """关闭数据库连接"""
         self.db.close()

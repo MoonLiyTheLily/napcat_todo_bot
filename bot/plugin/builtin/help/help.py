@@ -2,11 +2,14 @@ import logging
 from bot.types.command_event import CommandEvent
 from bot.apis.create_reply import create_reply
 from bot.apis.send_message import sender
+from bot.plugin.basic_plugin import BasicPlugin
+from bot.plugin.manager.plugin_registry import register_command
 
 logger = logging.getLogger(__name__)
 
 
-class HelpHandler:
+class HelpHandler(BasicPlugin):
+    @register_command("help")
     async def handle(self, command_event: CommandEvent):
         """显示帮助信息的函数
 
