@@ -1,6 +1,6 @@
 import logging
 from bot.llm.llm_chat_openai import LLMChatHandlerOpenAI
-from bot.logics import create_mirror_reply
+from bot.apis.mirror_reply import create_mirror_reply
 from bot.config.config import DEFAULT_CONFIG
 
 
