@@ -10,7 +10,8 @@ class TodoItem(pydantic.BaseModel):
     is_done: bool
     user_create_time: str
     update_time: str
-    complete_time: str
+    complete_time: str | None
+    notify_time: str | None
 
     def get_list_string(self):
         """获取用于聊天显示的字符串

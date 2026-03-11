@@ -37,9 +37,10 @@ class TodoDatabase:
                 user_id VARCHAR(15) NOT NULL,\
                 content VARCHAR(255) NOT NULL,\
                 is_done BOOLEAN NOT NULL DEFAULT 0,\
-                user_created_at VARCHAR(30) DEFAULT CURRENT_TIMESTAMP,\
-                updated_at VARCHAR(30) DEFAULT CURRENT_TIMESTAMP,\
-                completed_at VARCHAR(30))"
+                user_create_time VARCHAR(30) DEFAULT CURRENT_TIMESTAMP,\
+                update_time VARCHAR(30) DEFAULT CURRENT_TIMESTAMP,\
+                complete_time VARCHAR(30),\
+                notify_time VARCHAR(30))"
         )
         self.db.commit()
 
@@ -67,6 +68,7 @@ class TodoDatabase:
                 user_create_time=item[4],
                 update_time=item[5],
                 complete_time=item[6],
+                notify_time=item[7],
             )
             todo_items.append(todo_item)
         return todo_items
@@ -86,6 +88,7 @@ class TodoDatabase:
                 item.user_create_time,
                 item.update_time,
                 item.complete_time,
+                item.notify_time,
             )
             sql_values.append(values)
         return sql_values
@@ -127,7 +130,13 @@ class TodoDatabase:
             logger.info("获得的用户id列表: %s", user_ids)
             return user_ids
 
-    def add_todo(self, user_id: int, content: str, user_create_time: str):
+    def add_todo(
+        self,
+        user_id: int,
+        content: str,
+        user_create_time: str,
+        notify_time: str | None = None,
+    ):
         """给定用户和内容，以及发送时间，加入待办表
 
         :param user_id: 用户id
@@ -138,11 +147,18 @@ class TodoDatabase:
         :type user_create_time: str
         """
         cursor = self.db.cursor()
-        cursor.execute(
-            "INSERT INTO todo_table (user_id,content,user_created_at,updated_at)\
-             VALUES (?,?,?,datetime('now', 'localtime'))",
-            (user_id, content, user_create_time),
-        )
+        if notify_time is not None:
+            cursor.execute(
+                "INSERT INTO todo_table (user_id,content,user_create_time,update_time,notify_time)\
+             VALUES (?,?,?,datetime('now', 'localtime'),?)",
+                (user_id, content, user_create_time, notify_time),
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO todo_table (user_id,content,user_create_time,update_time)\
+                 VALUES (?,?,?,datetime('now', 'localtime'))",
+                (user_id, content, user_create_time),
+            )
         self.db.commit()
 
     def add_todo_todoitem(self, todo_item: TodoItem):
@@ -154,7 +170,7 @@ class TodoDatabase:
         """
         cursor = self.db.cursor()
         cursor.execute(
-            "INSERT INTO todo_table (user_id,content,is_done,user_created_at,updated_at,completed_at)\
+            "INSERT INTO todo_table (user_id,content,is_done,user_create_time,update_time,complete_time)\
              VALUES (?,?,?,?,?,?)",
             (
                 todo_item.user_id,
@@ -170,7 +186,7 @@ class TodoDatabase:
     def modify_todo(self, user_id: int, todo_id: int, new_content: str):
         cursor = self.db.cursor()
         cursor.execute(
-            "UPDATE todo_table SET content=?, updated_at=datetime('now', 'localtime')\
+            "UPDATE todo_table SET content=?, update_time=datetime('now', 'localtime')\
              WHERE user_id=? AND todo_id=?",
             (new_content, user_id, todo_id),
         )
@@ -190,13 +206,13 @@ class TodoDatabase:
         cursor = self.db.cursor()
         if complete_time == "":
             cursor.execute(
-                "UPDATE todo_table SET is_done=1, completed_at=datetime('now', 'localtime'), updated_at=datetime('now', 'localtime')\
+                "UPDATE todo_table SET is_done=1, complete_time=datetime('now', 'localtime'), update_time=datetime('now', 'localtime')\
              WHERE user_id=? AND todo_id=?",
                 (user_id, todo_id),
             )
         else:
             cursor.execute(
-                "UPDATE todo_table SET is_done=1, completed_at=?, updated_at=datetime('now', 'localtime')\
+                "UPDATE todo_table SET is_done=1, complete_time=?, update_time=datetime('now', 'localtime')\
                  WHERE user_id=? AND todo_id=?",
                 (complete_time, user_id, todo_id),
             )
@@ -213,7 +229,7 @@ class TodoDatabase:
         """
         cursor = self.db.cursor()
         cursor.execute(
-            "UPDATE todo_table SET is_done=0, completed_at=NULL, updated_at=datetime('now', 'localtime')\
+            "UPDATE todo_table SET is_done=0, complete_time=NULL, update_time=datetime('now', 'localtime')\
              WHERE user_id=? AND todo_id=?",
             (user_id, todo_id),
         )
