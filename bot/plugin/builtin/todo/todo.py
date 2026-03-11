@@ -26,7 +26,9 @@ class TodoHandler(BasicPlugin):
 
     @register_command("todo")
     async def handle(self, command_event: CommandEvent):
-        """处理todo命令的函数
+        """待办事项管理
+
+        处理todo命令的函数
 
         :param user_id: 用户id
         :type user_id: int
