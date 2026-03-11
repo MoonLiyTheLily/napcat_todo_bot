@@ -60,18 +60,18 @@ class TodoDatabase:
         todo_items = []
         for item in sql_result:
             todo_item = TodoItem(
-                _database_id=item[0],
-                _user_id=item[1],
-                _content=item[2],
-                _is_done=bool(item[3]),
-                _user_create_time=item[4],
-                _update_time=item[5],
-                _complete_time=item[6],
+                database_id=item[0],
+                user_id=item[1],
+                content=item[2],
+                is_done=bool(item[3]),
+                user_create_time=item[4],
+                update_time=item[5],
+                complete_time=item[6],
             )
             todo_items.append(todo_item)
         return todo_items
 
-    def todoitems_to_sql_values(self, todo_items):
+    def todoitems_to_sql_values(self, todo_items: list[TodoItem]):
         """将TodoItem的list转换为可以插入数据库的值
 
         :param todo_items: todo items的list

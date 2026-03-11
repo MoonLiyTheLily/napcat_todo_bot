@@ -1,9 +1,12 @@
 import os
+import logging
 from pathlib import Path
 import importlib
 from types import ModuleType
 import pydantic
 from bot.plugin.manager.plugin_registry import clear_registry, auto_register
+
+logger = logging.getLogger(__name__)
 
 
 def get_bot_root():
@@ -106,12 +109,12 @@ class PluginManager:
         auto_register()
 
     def reload(self):
-        """清除命令注册表，然后重载插件
-
-        目前还没有使用
-        """
+        """清除命令注册表，然后重载插件"""
 
         clear_registry()
-        for _, module in self.module_list:
-            importlib.reload(module)
+        try:
+            for _, module in self.module_list:
+                importlib.reload(module)
+        except ModuleNotFoundError as e:
+            logger.exception("重载错误: %s", e)
         self.load()

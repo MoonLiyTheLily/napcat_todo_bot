@@ -108,6 +108,8 @@ class ConfigManagerHandler(BasicPlugin):
 
     @register_command("config")
     async def handle(self, command_event: CommandEvent):
+        """在运行时改动配置"""
+
         user_id = command_event.user_id
         admin_user_id = DEFAULT_CONFIG["admin_user_id"]
         if user_id != admin_user_id:

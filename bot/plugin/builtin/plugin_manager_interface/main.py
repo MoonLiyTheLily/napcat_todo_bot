@@ -11,13 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 class PluginManagerInterface(BasicPlugin):
+    """插件管理器的聊天软件内界面"""
 
     @register_command("pluginreload")
     async def handle(self, command_event: CommandEvent):
-        """插件管理器的聊天软件内界面
+        """重载所有插件"""
 
-        目前这个handler除了重载插件没有别的用处
-        """
         user_id = command_event.user_id
         admin_user_id = DEFAULT_CONFIG["admin_user_id"]
         if user_id != admin_user_id:
