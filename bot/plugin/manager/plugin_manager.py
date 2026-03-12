@@ -4,7 +4,11 @@ from pathlib import Path
 import importlib
 from types import ModuleType
 import pydantic
-from bot.plugin.manager.plugin_registry import clear_registry, auto_register
+from bot.plugin.manager.plugin_registry import (
+    clear_command_registry,
+    auto_register,
+)
+from bot.llm.llm_tool_registry import clear_llm_tool_registry
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +115,8 @@ class PluginManager:
     def reload(self):
         """清除命令注册表，然后重载插件"""
 
-        clear_registry()
+        clear_llm_tool_registry()
+        clear_command_registry()
         try:
             for _, module in self.module_list:
                 importlib.reload(module)

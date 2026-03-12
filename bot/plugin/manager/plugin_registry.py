@@ -1,7 +1,9 @@
 import sys
 from bot.plugin.basic_plugin import BasicPlugin
+from bot.llm.llm_tool_registry import llm_tool_registry
+from bot.active.active_registry import active_registry
 
-command_registry = {}
+command_registry: dict = {}
 
 
 def register_command(command: str):
@@ -17,7 +19,7 @@ def register_command(command: str):
     return decorator
 
 
-def clear_registry():
+def clear_command_registry():
     """用于重载插件的时候提前clear"""
 
     command_registry.clear()
@@ -42,3 +44,7 @@ def auto_register():
             attr = getattr(instance, attr_name)
             if callable(attr) and hasattr(attr, "__command_name__"):
                 command_registry[attr.__command_name__] = attr
+            elif callable(attr) and hasattr(attr, "__llm_tool_name__"):
+                llm_tool_registry[attr.__llm_tool_name__].function = attr
+            elif callable(attr) and hasattr(attr, "__active_task_name__"):
+                active_registry[attr.__active_task_name__].function = attr
