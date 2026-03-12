@@ -1,9 +1,13 @@
 import logging
+import websockets, asyncio
 from bot.types import CommandEvent, TodoItem
 from bot.apis.create_reply import create_reply
 from bot.apis.send_message import sender
 from bot.plugin.basic_plugin import BasicPlugin
-from bot.plugin.manager.plugin_registry import register_command
+from bot.apis.registries import register_llm_tool, register_command, register_active
+from bot.llm.llm_tool_registry import LLMToolContext
+from bot.plugin.builtin.todo.todo_tools import descriptions
+from bot.config.config import DEFAULT_CONFIG
 from database import TodoDatabase
 
 logger = logging.getLogger(__name__)
@@ -150,45 +154,60 @@ class TodoHandler(BasicPlugin):
     def delete(self, command_event: CommandEvent):
         """删除指定的待办事项
 
-        用户指定的是待办的编号，从1开始。待办编号是“此用户的第几个待办”，而不是总数据库里的id
+        用户指定的是待办的编号（或者all），从1开始。待办编号是“此用户的第几个待办”，而不是总数据库里的id
         """
         if len(command_event.parameters) < 2:
             reply = (
                 create_reply()
                 .to(command_event.user_id)
-                .text("请提供要删除的待办事项编号。")
+                .text("请提供要删除的待办事项编号，如果您想删除所有待办，请使用all。")
             )
             return reply.build()
-        if not command_event.parameters[1].isdigit():
+        if (
+            not command_event.parameters[1].isdigit()
+            and not command_event.parameters[1] == "all"
+        ):
             reply = (
                 create_reply()
                 .to(command_event.user_id)
-                .text("待办事项编号必须是数字。")
+                .text("待办事项编号必须是数字，如果您想删除所有待办，请使用all。")
             )
             return reply.build()
 
-        todo_index = int(command_event.parameters[1]) - 1
+        if command_event.parameters[1].isdigit():
+            todo_index = int(command_event.parameters[1]) - 1
+            todo_list = self.todo_db.check_todo(command_event.user_id)
+            if todo_list is None or len(todo_list) == 0:
+                reply = (
+                    create_reply()
+                    .to(command_event.user_id)
+                    .text("您的待办事项列表为空，无法删除。")
+                )
+                return reply.build()
 
-        todo_list = self.todo_db.check_todo(command_event.user_id)
-        if todo_list is None or len(todo_list) == 0:
-            reply = (
-                create_reply()
-                .to(command_event.user_id)
-                .text("您的待办事项列表为空，无法删除。")
-            )
-            return reply.build()
+            if todo_index < 0 or todo_index >= len(todo_list):
+                reply = (
+                    create_reply()
+                    .to(command_event.user_id)
+                    .text("待办事项编号无效，无法删除。")
+                )
+                return reply.build()
 
-        if todo_index < 0 or todo_index >= len(todo_list):
-            reply = (
-                create_reply()
-                .to(command_event.user_id)
-                .text("待办事项编号无效，无法删除。")
-            )
-            return reply.build()
-
-        todo_item = todo_list[todo_index]
-        assert isinstance(todo_item, TodoItem)
-        self.todo_db.delete_todo(command_event.user_id, todo_item.database_id)
+            todo_item = todo_list[todo_index]
+            assert isinstance(todo_item, TodoItem)
+            self.todo_db.delete_todo(command_event.user_id, todo_item.database_id)
+        elif command_event.parameters[1] == "all":
+            todo_list = self.todo_db.check_todo(command_event.user_id)
+            if todo_list is None or len(todo_list) == 0:
+                reply = (
+                    create_reply()
+                    .to(command_event.user_id)
+                    .text("您的待办事项列表为空，无法删除。")
+                )
+                return reply.build()
+            for todo in todo_list:
+                assert isinstance(todo, TodoItem)
+                self.todo_db.delete_todo(command_event.user_id, todo.database_id)
 
         reply = create_reply().to(command_event.user_id).text("已删除指定的待办事项。")
         return reply.build()
@@ -202,49 +221,56 @@ class TodoHandler(BasicPlugin):
             reply = (
                 create_reply()
                 .to(command_event.user_id)
-                .text("请提供要标记为完成的待办事项编号。")
+                .text("请提供要完成的待办编号，如果您想完成所有待办，请使用all。")
             )
             return reply.build()
-        if not command_event.parameters[1].isdigit():
+        if (
+            not command_event.parameters[1].isdigit()
+            and not command_event.parameters[1] == "all"
+        ):
             reply = (
                 create_reply()
                 .to(command_event.user_id)
-                .text("待办事项编号必须是数字。")
+                .text("待办事项编号必须是数字，如果您想完成所有待办，请使用all。")
             )
             return reply.build()
 
-        todo_index = int(command_event.parameters[1]) - 1
+        if command_event.parameters[1].isdigit():
+            todo_index = int(command_event.parameters[1]) - 1
+            todo_list = self.todo_db.check_todo(command_event.user_id)
+            if todo_list is None or len(todo_list) == 0:
+                reply = (
+                    create_reply()
+                    .to(command_event.user_id)
+                    .text("您的待办事项列表为空，无法完成。")
+                )
+                return reply.build()
 
-        todo_list = self.todo_db.check_todo(command_event.user_id)
-        if todo_list is None or len(todo_list) == 0:
-            reply = (
-                create_reply()
-                .to(command_event.user_id)
-                .text("您的待办事项列表为空，无法标记完成。")
-            )
-            return reply.build()
+            if todo_index < 0 or todo_index >= len(todo_list):
+                reply = (
+                    create_reply()
+                    .to(command_event.user_id)
+                    .text("待办事项编号无效，无法完成。")
+                )
+                return reply.build()
 
-        if todo_index < 0 or todo_index >= len(todo_list):
-            reply = (
-                create_reply()
-                .to(command_event.user_id)
-                .text("待办事项编号无效，无法标记完成。")
-            )
-            return reply.build()
+            todo_item = todo_list[todo_index]
+            assert isinstance(todo_item, TodoItem)
+            self.todo_db.complete_todo(command_event.user_id, todo_item.database_id)
+        elif command_event.parameters[1] == "all":
+            todo_list = self.todo_db.check_todo(command_event.user_id)
+            if todo_list is None or len(todo_list) == 0:
+                reply = (
+                    create_reply()
+                    .to(command_event.user_id)
+                    .text("您的待办事项列表为空，无法完成。")
+                )
+                return reply.build()
+            for todo in todo_list:
+                assert isinstance(todo, TodoItem)
+                self.todo_db.complete_todo(command_event.user_id, todo.database_id)
 
-        todo_item = todo_list[todo_index]
-        assert isinstance(todo_item, TodoItem)
-        self.todo_db.complete_todo(
-            command_event.user_id,
-            todo_item.database_id,
-            command_event.user_send_time,
-        )
-
-        reply = (
-            create_reply()
-            .to(command_event.user_id)
-            .text("已将指定的待办事项标记为完成。")
-        )
+        reply = create_reply().to(command_event.user_id).text("已完成指定的待办事项。")
         return reply.build()
 
     def undone(self, command_event: CommandEvent):
@@ -256,41 +282,58 @@ class TodoHandler(BasicPlugin):
             reply = (
                 create_reply()
                 .to(command_event.user_id)
-                .text("请提供要标记为未完成的待办事项编号。")
+                .text(
+                    "请提供要标记为未完成的待办编号，如果您想将所有待办标记为未完成，请使用all。"
+                )
             )
             return reply.build()
-        if not command_event.parameters[1].isdigit():
+        if (
+            not command_event.parameters[1].isdigit()
+            and not command_event.parameters[1] == "all"
+        ):
             reply = (
                 create_reply()
                 .to(command_event.user_id)
-                .text("待办事项编号必须是数字。")
+                .text(
+                    "待办事项编号必须是数字，如果您想将所有待办标记为未完成，请使用all。"
+                )
             )
             return reply.build()
 
-        todo_index = int(command_event.parameters[1]) - 1
+        if command_event.parameters[1].isdigit():
+            todo_index = int(command_event.parameters[1]) - 1
+            todo_list = self.todo_db.check_todo(command_event.user_id)
+            if todo_list is None or len(todo_list) == 0:
+                reply = (
+                    create_reply()
+                    .to(command_event.user_id)
+                    .text("您的待办事项列表为空，无法标记为未完成。")
+                )
+                return reply.build()
 
-        todo_list = self.todo_db.check_todo(command_event.user_id)
-        if todo_list is None or len(todo_list) == 0:
-            reply = (
-                create_reply()
-                .to(command_event.user_id)
-                .text("您的待办事项列表为空，无法标记未完成。")
-            )
-            return reply.build()
-        if todo_index < 0 or todo_index >= len(todo_list):
-            reply = (
-                create_reply()
-                .to(command_event.user_id)
-                .text("待办事项编号无效，无法标记未完成。")
-            )
-            return reply.build()
+            if todo_index < 0 or todo_index >= len(todo_list):
+                reply = (
+                    create_reply()
+                    .to(command_event.user_id)
+                    .text("待办事项编号无效，无法标记为未完成。")
+                )
+                return reply.build()
 
-        todo_item = todo_list[todo_index]
-        assert isinstance(todo_item, TodoItem)
-        self.todo_db.uncomplete_todo(
-            command_event.user_id,
-            todo_item.database_id,
-        )
+            todo_item = todo_list[todo_index]
+            assert isinstance(todo_item, TodoItem)
+            self.todo_db.complete_todo(command_event.user_id, todo_item.database_id)
+        elif command_event.parameters[1] == "all":
+            todo_list = self.todo_db.check_todo(command_event.user_id)
+            if todo_list is None or len(todo_list) == 0:
+                reply = (
+                    create_reply()
+                    .to(command_event.user_id)
+                    .text("您的待办事项列表为空，无法标记为未完成。")
+                )
+                return reply.build()
+            for todo in todo_list:
+                assert isinstance(todo, TodoItem)
+                self.todo_db.complete_todo(command_event.user_id, todo.database_id)
 
         reply = (
             create_reply()
@@ -298,3 +341,115 @@ class TodoHandler(BasicPlugin):
             .text("已将指定的待办事项标记为未完成。")
         )
         return reply.build()
+
+    @register_llm_tool("check_todo", description=descriptions["check_todo"])
+    def check_todo_llm(self, tool_context: LLMToolContext, arguments):
+        user_id = tool_context.user_id
+        todos = self.get_todos(user_id)
+        if todos is None or len(todos) == 0:
+            message = "您的待办事项列表为空。"
+        else:
+            message = "您的待办事项列表：\n"
+            todo_number = 1
+            for todo in todos:
+                message += f"{todo_number}. {todo}\n"
+                todo_number += 1
+            message = message[:-1]  # 去掉最后的换行符
+        return message
+
+    @register_llm_tool("create_todo", description=descriptions["create_todo"])
+    def create_todo_llm(self, tool_context: LLMToolContext, arguments: dict):
+        content = arguments["content"]
+        date = arguments.get("date")
+        if date is None:
+            self.todo_db.add_todo(
+                user_id=tool_context.user_id,
+                content=content,
+                user_create_time=tool_context.user_send_time,
+            )
+            return "已成功创建普通待办"
+        else:
+            self.todo_db.add_todo(
+                user_id=tool_context.user_id,
+                content=content,
+                user_create_time=tool_context.user_send_time,
+                notify_time=date,
+            )
+            return "已成功创建带有提醒的待办"
+
+    @register_llm_tool("delete_todo", description=descriptions["delete_todo"])
+    def delete_todo_llm(self, tool_context: LLMToolContext, arguments: dict):
+        todo_id_or_all: str = arguments["todo_id_or_all"]
+        if todo_id_or_all.isdigit():
+            # 这里似乎还需要检查待办是否存在，顺带给llm提醒一下删除的待办是什么名字
+            self.todo_db.delete_todo(tool_context.user_id, int(todo_id_or_all))
+            return f"已经删除{int(todo_id_or_all)}号待办"
+        elif todo_id_or_all == "all":
+            todo_list = self.todo_db.check_todo(tool_context.user_id)
+            if todo_list is None or len(todo_list) == 0:
+                return "用户没有待办事项，不能删除"
+            for todo in todo_list:
+                assert isinstance(todo, TodoItem)
+                self.todo_db.delete_todo(tool_context.user_id, todo.database_id)
+            return "已经删除用户的所有待办事项"
+
+    @staticmethod
+    @register_llm_tool("get_current_time", description=descriptions["get_current_time"])
+    def get_current_time(tool_context: LLMToolContext, arguments):
+        return str(tool_context.user_send_time)
+
+
+class TodoNotifier(BasicPlugin):
+    def __init__(self) -> None:
+        self.todo_db = TodoDatabase()
+
+    async def todo_sender(self, user_id, todo_items):
+        user_todos = []
+        for item in todo_items:
+            assert isinstance(item, TodoItem)
+            if not item.is_done:
+                user_todos.append(item.get_list_string())
+        if len(user_todos) > 0:
+            message = "您有以下待办事项未完成：\n" + "\n".join(user_todos)
+            reply = create_reply().to(user_id).text(message).build()
+            await sender.send(reply)
+            logger.info("已发送待办事项通知给用户%s", user_id)
+
+    @register_active(
+        "todo_notifier", 60 * DEFAULT_CONFIG["active"]["todo"]["notify_interval"]
+    )
+    async def todo_notify(self):
+        """Todo定时通知函数"""
+        try:
+            logger.info("检查待办事项通知")
+            users = self.todo_db.check_all_user()
+            if users is not None and len(users) > 0:
+                tasks: list[asyncio.Task] = []
+                for user_id in users:
+                    todo_items = self.todo_db.check_todo(user_id)
+                    tasks.append(
+                        asyncio.create_task(
+                            self.todo_sender(user_id, todo_items), name=f"{user_id}"
+                        )
+                    )
+                    assert todo_items is not None
+                await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+                for task in tasks:
+                    if task.exception() is not None:
+                        logger.exception(
+                            "向用户 %s 的待办通知发生错误: %s",
+                            task.get_name(),
+                            task.exception(),
+                        )
+        except (websockets.ConnectionClosedError, websockets.ConnectionClosed):
+            logger.error("WebSocket连接已关闭，停止待办事项通知")
+            return
+        except asyncio.CancelledError:
+            logger.info("待办事项通知任务已取消")
+            raise
+        except Exception as e:
+            logger.exception("待办事项通知出现错误: %s", str(e))
+            raise
+
+    def __del__(self):
+        self.todo_db.close()

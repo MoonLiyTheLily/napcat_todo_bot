@@ -19,4 +19,9 @@ class TodoItem(pydantic.BaseModel):
         :param self: 说明
         """
         completed = "✅" if self.is_done else "❎"
-        return f"{completed} | {self.content}\n(创建时间: {self.user_create_time})"
+        result = f"{completed} | {self.content}\n(创建时间: {self.user_create_time})"
+        if self.complete_time is not None or self.complete_time == "":
+            result += f"\n(完成时间 {self.complete_time})"
+        if self.notify_time is not None or self.notify_time == "":
+            result += f"\n(提醒时间 {self.notify_time})"
+        return result
