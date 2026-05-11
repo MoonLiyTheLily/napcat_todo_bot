@@ -6,13 +6,13 @@ class CommandEvent:
         _user_id: int,
         _command: str = "",
         _parameter: list[str] | None = None,
-        _user_send_time="",
+        _user_send_time: str = "",
     ) -> None:
-        self.user_id = _user_id
-        self.command = _command
-        self.user_send_time = _user_send_time
+        self.user_id: int = _user_id
+        self.command: str = _command
+        self.user_send_time: str = _user_send_time
         if _parameter is None:
-            self.parameters = []
+            self.parameters: list[str] = []
         else:
             self.parameters = _parameter
 

@@ -1,16 +1,16 @@
 import sqlite3
 from pathlib import Path
 from enum import Enum
-from typing import Dict
+from typing import Any
 
 
 class BasicDatabase:
 
     def __init__(self, table_name: str) -> None:
         self.table_name: str = table_name
-        self.columns: Dict[str, str] = {}
+        self.columns: dict[str, str] = {}
 
-    def initialize(self, columns: Dict[str, str]):
+    def initialize(self, columns: dict[str, str]) -> None:
         if len(columns) == 0:
             return
         sql_command = f"CREATE TABLE IF NOT EXISTS {self.table_name}("
@@ -21,16 +21,16 @@ class BasicDatabase:
         sql_command += ",".join(columns_list) + ")"
         print(sql_command)
 
-    def add(self, values: list):
+    def add(self, values: list[Any]) -> None:
         pass
 
-    def check(self, check_value):
+    def check(self, check_value: Any) -> None:
         pass
 
-    def update(self):
+    def update(self) -> None:
         pass
 
-    def delete(self):
+    def delete(self) -> None:
         pass
 
 

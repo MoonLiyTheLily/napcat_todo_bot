@@ -25,6 +25,10 @@ def get_other_plugin_path():
     return os.path.realpath(os.path.join(get_bot_root(), "bot", "plugin", "other"))
 
 
+def get_config_path():
+    return os.path.realpath(os.path.join(get_bot_root(), "config"))
+
+
 class PluginData(pydantic.BaseModel):
     name: str
     file_path: Path
@@ -33,7 +37,7 @@ class PluginData(pydantic.BaseModel):
 
 
 class PluginManager:
-    _instances = []
+    _instances: list["PluginManager"] = []
 
     def __init__(self) -> None:
         self.__class__._instances.append(self)
@@ -41,8 +45,7 @@ class PluginManager:
         self.module_list: list[tuple[str, ModuleType]] = []
 
     @staticmethod
-    def _get_module_file(path: str) -> list[dict[str, str]]:
-        modules = []
+    def _get_module_file(path: str) -> list[dict[str, str]]:        modules = []
         dir_list = os.listdir(path)
 
         for d in dir_list:
@@ -67,7 +70,7 @@ class PluginManager:
                     print(f"目录{d}下未找到main.py或{d}.py.")
         return modules
 
-    def _get_plugin_modules(self) -> dict:
+    def _get_plugin_modules(self) -> dict[str, list[dict[str, str]]]:
         builtin_list = self._get_module_file(get_builtin_plugin_path())
         other_list = self._get_module_file(get_other_plugin_path())
         return {
@@ -75,7 +78,7 @@ class PluginManager:
             "other": other_list,
         }
 
-    def load(self):
+    def load(self) -> None:
         """加载插件"""
 
         self.plugin_list.clear()
@@ -112,7 +115,7 @@ class PluginManager:
             self.module_list.append((plugin["name"], m))
         auto_register()
 
-    def reload(self):
+    def reload(self) -> None:
         """清除命令注册表，然后重载插件"""
 
         clear_llm_tool_registry()
