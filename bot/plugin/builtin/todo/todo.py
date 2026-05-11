@@ -7,7 +7,7 @@ from bot.plugin.basic_plugin import BasicPlugin
 from bot.apis.registries import register_llm_tool, register_command, register_active
 from bot.llm.llm_tool_registry import LLMToolContext
 from bot.plugin.builtin.todo.todo_tools import descriptions
-from bot.config.config import DEFAULT_CONFIG
+from bot.config.config import config
 from database import TodoDatabase
 
 logger = logging.getLogger(__name__)
@@ -416,7 +416,7 @@ class TodoNotifier(BasicPlugin):
             logger.info("已发送待办事项通知给用户%s", user_id)
 
     @register_active(
-        "todo_notifier", 60 * DEFAULT_CONFIG["active"]["todo"]["notify_interval"]
+        "todo_notifier", 60 * config.get("active.todo.notify_interval")
     )
     async def todo_notify(self):
         """Todo定时通知函数"""

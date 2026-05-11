@@ -6,7 +6,7 @@ from database import LastMessageDatabase
 from bot.apis.send_message import sender
 from bot.apis.create_reply import create_reply
 from bot.apis.registries import register_active
-from bot.config.config import DEFAULT_CONFIG
+from bot.config.config import config
 from bot.plugin.basic_plugin import BasicPlugin
 
 logger = logging.getLogger(__name__)
@@ -17,12 +17,12 @@ class ActiveGravity(BasicPlugin):
         self.last_message_db = LastMessageDatabase()
 
     @register_active(
-        "gravity", 60 * DEFAULT_CONFIG["active"]["todo"]["notify_interval"]
+        "gravity", 60 * config.get("active.todo.notify_interval")
     )
-    async def gravity(self):
+    async def gravity(self) -> None:
         """重力文案逻辑"""
 
-        threshold = DEFAULT_CONFIG["active"]["gravity"]["threshold"]
+        threshold = config.get("active.gravity.threshold")
         try:
             last_message_db = self.last_message_db
             # 获取所有用户的最后消息记录
@@ -67,7 +67,7 @@ class ActiveGravity(BasicPlugin):
         logger.info("用户没有发送消息，上次%s", last_message_time)
         return True
 
-    async def gravity_sender(self, user_id: int):
+    async def gravity_sender(self, user_id: int) -> None:
         """发送重力文案的函数"""
 
         logger.info("准备发送重力文案给用户 %s", user_id)

@@ -2,7 +2,7 @@ import asyncio
 import logging
 import websockets
 import colorlog
-from bot.config.config import DEFAULT_CONFIG
+from bot.config.config import config
 from bot.core import Core
 
 
@@ -36,7 +36,7 @@ logging.basicConfig(
 )
 
 
-async def main():
+async def main() -> None:
     """主函数"""
     # 初始化
     core = Core()
@@ -44,8 +44,8 @@ async def main():
 
     server = await websockets.serve(
         core.handle,
-        DEFAULT_CONFIG["websocket_host"],
-        DEFAULT_CONFIG["websocket_port"],
+        config.get("websocket_host"),
+        config.get("websocket_port"),
         subprotocols=[],  # 建议加上，兼容性更好
     )
     logger.info("WebSocket 服务已启动")
