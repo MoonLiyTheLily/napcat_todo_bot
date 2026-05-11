@@ -1,17 +1,18 @@
 import json
+from typing import Any
 
 
 class ReplyMessage:
     def __init__(self) -> None:
         self.action: str = "send_private_msg"
         self.user_id: int | None = None
-        self.message: list = []
+        self.message: list[dict[str, Any]] = []
 
-    def to(self, _user_id: int):
+    def to(self, _user_id: int) -> "ReplyMessage":
         self.user_id = _user_id
         return self
 
-    def text(self, _text):
+    def text(self, _text: str) -> "ReplyMessage":
         self.message.append(
             {
                 "type": "text",
@@ -20,7 +21,7 @@ class ReplyMessage:
         )
         return self
 
-    def image(self, _file_path, _summary="图片"):
+    def image(self, _file_path: str, _summary: str = "图片") -> "ReplyMessage":
         self.message.append(
             {
                 "type": "image",
@@ -32,7 +33,7 @@ class ReplyMessage:
         )
         return self
 
-    def build(self):
+    def build(self) -> str:
         assert self.user_id is not None, "user_id不能为空"
         reply = {
             "action": self.action,

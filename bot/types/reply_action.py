@@ -2,5 +2,5 @@
 class ReplyAction:
     def __init__(self) -> None:
         self.action: str = "None"
-        self.user_id: int = ""
-        self.message: list = []
+        self.user_id: int = 0
+        self.message: list[str] = []

@@ -1,5 +1,7 @@
 import logging
-import websockets, asyncio
+import websockets
+import asyncio
+from typing import Any
 from bot.types import CommandEvent, TodoItem
 from bot.apis.create_reply import create_reply
 from bot.apis.send_message import sender
@@ -14,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class TodoHandler(BasicPlugin):
-    def __init__(self):
+    def __init__(self) -> None:
         self.todo_db = TodoDatabase()
         self.todo_db.initialize_table()
         self.parameter_handlers = {
