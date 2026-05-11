@@ -1,0 +1,23 @@
+{
+    "websocket_host": "127.0.0.1",
+    "websocket_port": 8000,
+    "admin_user_id": 0,
+    "active": {
+        "todo": {
+            "notify_interval": 1800
+        },
+        "gravity": {
+            "check_interval": 3600,
+            "threshold": 60,
+            "earliest": 1440
+        }
+    },
+    "llm": {
+        "enable": true,
+        "basic": {
+            "api_key": "",
+            "base_url": "",
+            "target_model": ""
+        }
+    }
+}

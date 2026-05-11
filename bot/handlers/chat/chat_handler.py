@@ -1,7 +1,8 @@
 import logging
+from typing import Any
 from bot.llm.llm_chat_openai import LLMChatHandlerOpenAI
 from bot.apis.mirror_reply import create_mirror_reply
-from bot.config.config import DEFAULT_CONFIG
+from bot.config.config import config
 
 
 class ChatHandler:
@@ -11,9 +12,9 @@ class ChatHandler:
         self.logger = logging.getLogger(__name__)
         self.llm_handler = LLMChatHandlerOpenAI()
 
-    async def handle(self, event: dict):
+    async def handle(self, event: dict[str, Any]) -> None:
         self.logger.debug("ChatHandler已执行")
-        enable_llm_reply = DEFAULT_CONFIG["llm"]["enable"]
+        enable_llm_reply: bool = config.get("llm.enable")
         if enable_llm_reply:
             await self.llm_handler.handle(event)
             return

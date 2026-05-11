@@ -1,21 +1,17 @@
 import logging
 import json
 from datetime import datetime
-from typing import Sequence
+from typing import Any, Sequence
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
 from bot.apis.create_reply import create_reply
 from bot.apis.send_message import sender
-from bot.config.config import DEFAULT_CONFIG
+from bot.config.config import config
 from bot.llm.llm_tool_registry import (
     llm_tool_registry,
     LLMToolContext,
     LLMToolRegistryData,
 )
-
-api_key = DEFAULT_CONFIG["llm"]["basic"]["api_key"]
-base_url = DEFAULT_CONFIG["llm"]["basic"]["base_url"]
-target_model = DEFAULT_CONFIG["llm"]["basic"]["target_model"]
 
 logger = logging.getLogger(__name__)
 
@@ -24,12 +20,23 @@ class LLMChatClientOpenAI:
     """管理单个OpenAI Client"""
 
     def __init__(self) -> None:
-        self.api_key = api_key
-        self.base_url = base_url
-        self.client: AsyncOpenAI = AsyncOpenAI(
-            api_key=self.api_key,
-            base_url=self.base_url,
-        )
+        self._client: AsyncOpenAI | None = None
+        self._cached_api_key: str | None = None
+        self._cached_base_url: str | None = None
+
+    @property
+    def client(self) -> AsyncOpenAI:
+        api_key = config.get("llm.basic.api_key")
+        base_url = config.get("llm.basic.base_url")
+        if (
+            self._client is None
+            or self._cached_api_key != api_key
+            or self._cached_base_url != base_url
+        ):
+            self._client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+            self._cached_api_key = api_key
+            self._cached_base_url = base_url
+        return self._client
 
     async def chat_completions(
         self, model: str, messages: Sequence[ChatCompletionMessageParam], **kwargs
@@ -43,16 +50,19 @@ class LLMChatClientOpenAI:
 class LLMChatSessionOpenAI:
     """管理单个对话session (带历史记录)"""
 
-    def __init__(self, client, user_id=1479548851):
-        self.user = user_id
+    def __init__(self, client: LLMChatClientOpenAI, user_id: int = 1479548851) -> None:
+        self.user: int = user_id
         self.client: LLMChatClientOpenAI = client
-        self.target_model = target_model
-        self.messages_list = []
-        self.tool_context = LLMToolContext(self.user)
+        self.messages_list: list[ChatCompletionMessageParam] = []
+        self.tool_context: LLMToolContext = LLMToolContext(self.user)
+
+    @property
+    def target_model(self) -> str:
+        return config.get("llm.basic.target_model")
 
     async def chat(
         self, message: str, tool_list: dict[str, LLMToolRegistryData] | None = None
-    ):
+    ) -> str | None:
         """发送消息"""
         self.messages_list.append({"role": "user", "content": message})
         self.messages_list.append(
@@ -124,7 +134,7 @@ class LLMChatSessionOpenAI:
         )
         return response.choices[0].message.content
 
-    def clear(self):
+    def clear(self) -> None:
         """重置会话"""
         self.messages_list = [m for m in self.messages_list if m["role"] == "system"]
 
@@ -133,9 +143,9 @@ class LLMChatHandlerOpenAI:
     def __init__(self) -> None:
         self.client: LLMChatClientOpenAI = LLMChatClientOpenAI()
         self.tools: dict[str, LLMToolRegistryData] = llm_tool_registry
-        self.sessions = {}
+        self.sessions: dict[int, LLMChatSessionOpenAI] = {}
 
-    async def handle(self, event: dict):
+    async def handle(self, event: dict[str, Any]) -> None:
         user_id = event["user_id"]
         logger.info("LLMChat正在处理来自: %s 的消息", user_id)
         user_message = ""
@@ -188,6 +198,8 @@ class LLMChatHandlerOpenAI:
             await sender.send(reply.build())
         except Exception as e:
             logger.exception("请求回复时出现错误%s", e)
+            reply = create_reply().to(user_id).text("请求回复时出现错误。")
+            await sender.send(reply.build())
         logger.info("LLMChat已经处理完来自: %s 的消息", user_id)
 
 

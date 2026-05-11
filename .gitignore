@@ -217,6 +217,8 @@ __marimo__/
 
 # My databases
 *.db
+# Config with secrets
+config.json
 # Ignore other plugins
 bot/plugin/other/*
 
