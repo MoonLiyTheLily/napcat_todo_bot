@@ -18,7 +18,7 @@ class ConfigManager:
     3. 运行时通过 set() 修改的值写入内存，可通过 save() 持久化到 json
     """
 
-    CONFIG_PATH = Path(__file__).parent.parent.parent / "config.json"
+    CONFIG_PATH = Path(__file__).parent.parent.parent / "bot" / "config" / "config.json"
 
     # .env 中需要覆盖到配置的密钥字段映射
     # key: .env 中的变量名, value: 配置中的点分路径

@@ -12,6 +12,12 @@ class ActiveTaskRegistryData:
 active_registry: dict[str, ActiveTaskRegistryData] = {}
 
 
+def clear_active_registry():
+    """全量清空，用于重载插件时"""
+
+    active_registry.clear()
+
+
 def register_active(task_name, interval):
     active_registry.update({task_name: ActiveTaskRegistryData(interval=interval)})
 
