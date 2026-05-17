@@ -2,7 +2,6 @@ import logging
 from typing import Any
 from bot.llm.llm_chat_openai import LLMChatHandlerOpenAI
 from bot.apis.mirror_reply import create_mirror_reply
-from bot.config.config import config
 from bot.apis.plugin_context import PluginContext
 
 
@@ -16,7 +15,7 @@ class ChatHandler:
 
     async def handle(self, event: dict[str, Any]) -> None:
         self.logger.debug("ChatHandler已执行")
-        enable_llm_reply: bool = config.get("llm.enable")
+        enable_llm_reply: bool = self.plugin_context.config_manager.get("llm.enable")
         if enable_llm_reply:
             await self.llm_handler.handle(event)
             return

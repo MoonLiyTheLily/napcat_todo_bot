@@ -6,6 +6,7 @@ from bot.handlers import UniversalHandler
 from bot.plugin.manager.plugin_manager import PluginManager
 from bot.active.active_manager import ActiveLogicManager
 from bot.apis.plugin_context import PluginContext
+from bot.config.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,7 @@ class Core:
         self.plugin_manager.load()
 
         # 插件上下文
-        self.plugin_context = PluginContext()
-        self.plugin_context.plugin_manager = self.plugin_manager
-        self.plugin_manager.plugin_context = self.plugin_context
+        self.plugin_context = PluginContext(config, self.plugin_manager)
 
         # 主消息处理器
         self.universal_handler = UniversalHandler(self.plugin_context)
