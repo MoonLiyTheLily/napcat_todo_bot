@@ -3,6 +3,7 @@ import websockets
 import asyncio
 from typing import Any
 from bot.types import CommandEvent, TodoItem
+from bot.apis.plugin_context import PluginContext
 from bot.apis.create_reply import create_reply
 from bot.apis.send_message import sender
 from bot.plugin.basic_plugin import BasicPlugin
@@ -31,15 +32,15 @@ class TodoHandler(BasicPlugin):
         }
 
     @register_command("todo")
-    async def handle(self, command_event: CommandEvent):
+    async def handle(self, context: PluginContext, command_event: CommandEvent):
         """待办事项管理
 
         处理todo命令的函数
 
-        :param user_id: 用户id
-        :type user_id: int
-        :param parameters: 解析获得的参数
-        :type parameters: list
+        :param context: 插件上下文
+        :type context: PluginContext
+        :param command_event: 解析获得的参数
+        :type command_event: CommandEvent
         """
 
         if len(command_event.parameters) == 0:
@@ -61,7 +62,7 @@ class TodoHandler(BasicPlugin):
                 .text("todo_handler已执行，但未找到对应的处理函数。")
                 .build()
             )
-        await sender.send(reply)
+        await context.sender.send(reply)
 
     def help(self, command_event: CommandEvent):
         """显示待办事项的帮助信息"""

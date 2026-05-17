@@ -21,14 +21,17 @@ class Core:
         self.active_task_manager_task = None
 
     def initialize(self):
-        # 插件上下文
-        self.plugin_context = PluginContext()
         # 插件管理器
         self.plugin_manager = PluginManager()
         self.plugin_manager.load()
 
+        # 插件上下文
+        self.plugin_context = PluginContext()
+        self.plugin_context.plugin_manager = self.plugin_manager
+        self.plugin_manager.plugin_context = self.plugin_context
+
         # 主消息处理器
-        self.universal_handler = UniversalHandler()
+        self.universal_handler = UniversalHandler(self.plugin_context)
 
         # 主动任务管理器
         self.active_task_manager = ActiveLogicManager()

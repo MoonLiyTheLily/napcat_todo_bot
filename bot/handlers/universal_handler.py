@@ -4,6 +4,7 @@ from bot.handlers import CommandHandler
 from bot.handlers import ChatHandler
 from bot.handlers.command.command_resolver import is_command
 from database.last_message.last_massage_db import LastMessageDatabase
+from bot.apis.plugin_context import PluginContext
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +24,10 @@ def is_private_chat(event: dict) -> bool:
 class UniversalHandler:
     """处理所有消息的总类"""
 
-    def __init__(self) -> None:
-        self.command_handler = CommandHandler()
-        self.chat_handler = ChatHandler()
+    def __init__(self, plugin_context: PluginContext) -> None:
+        self.plugin_context = plugin_context
+        self.command_handler = CommandHandler(plugin_context)
+        self.chat_handler = ChatHandler(plugin_context)
         self.last_message_db = LastMessageDatabase()
 
     async def handle(self, event: dict):
