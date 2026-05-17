@@ -2,8 +2,8 @@ import logging
 import datetime
 import httpx
 from bot.types import CommandEvent
+from bot.apis.plugin_context import PluginContext
 from bot.apis.create_reply import create_reply
-from bot.apis.send_message import sender
 from bot.plugin.basic_plugin import BasicPlugin
 from bot.plugin.manager.plugin_registry import register_command
 
@@ -100,23 +100,23 @@ class YurikotoHandler(BasicPlugin):
                 return ("获取台词失败", "Yurikoto模块")
 
     @register_command("yurikoto")
-    async def handler(self, command_event: CommandEvent):
+    async def handler(self, context: PluginContext, command_event: CommandEvent):
         user_id = command_event.user_id
         image_link = await self.get_yurikoto_picture_async_link()
         if image_link is not None:
             reply = create_reply().to(user_id).image(image_link)
-            await sender.send(reply.build())
+            await context.sender.send(reply.build())
         else:
             reply = create_reply().to(user_id).text("获取Yurikoto随机图片失败。")
-            await sender.send(reply.build())
+            await context.sender.send(reply.build())
 
     @register_command("yuriline")
-    async def handler_line(self, command_event: CommandEvent):
+    async def handler_line(self, context: PluginContext, command_event: CommandEvent):
         user_id = command_event.user_id
         line, source = await self.get_yurikoto_line()
         if line is not None:
             reply = create_reply().to(user_id).text(line + "\n- " + source)
-            await sender.send(reply.build())
+            await context.sender.send(reply.build())
         else:
             reply = create_reply().to(user_id).text("获取Yurikoto随机台词失败。")
-            await sender.send(reply.build())
+            await context.sender.send(reply.build())

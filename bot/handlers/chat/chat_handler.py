@@ -3,13 +3,15 @@ from typing import Any
 from bot.llm.llm_chat_openai import LLMChatHandlerOpenAI
 from bot.apis.mirror_reply import create_mirror_reply
 from bot.config.config import config
+from bot.apis.plugin_context import PluginContext
 
 
 class ChatHandler:
     """处理聊天类消息"""
 
-    def __init__(self) -> None:
+    def __init__(self, plugin_context: PluginContext) -> None:
         self.logger = logging.getLogger(__name__)
+        self.plugin_context = plugin_context
         self.llm_handler = LLMChatHandlerOpenAI()
 
     async def handle(self, event: dict[str, Any]) -> None:

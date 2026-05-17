@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 import importlib
 from types import ModuleType
+from typing import Any
 import pydantic
 from bot.plugin.manager.plugin_registry import (
     clear_command_registry,
@@ -44,6 +45,7 @@ class PluginManager:
         self.__class__._instances.append(self)
         self.plugin_list: list[PluginData] = []
         self.module_list: list[tuple[str, ModuleType]] = []
+        self.plugin_context: Any = None
 
     @staticmethod
     def _get_module_file(path: str) -> list[dict[str, str]]:
