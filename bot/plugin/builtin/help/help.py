@@ -46,9 +46,11 @@ class HelpHandler(BasicPlugin):
         logger.info("help_handler已执行")
         help_message = """自动帮助信息:\n"""
         help_message_list = []
-        for command_name, command_handler in command_registry.items():
-            if getattr(command_handler, "__doc__") is not None:
-                lines = command_handler.__doc__.split("\n")
+        for command_name, command_data in command_registry.items():
+            func = command_data.function
+            if func is not None and getattr(func, "__doc__") is not None:
+                lines = func.__doc__.split("\n")  # type: ignore
+                # Pylance真是神了
                 help_message_list.append("/" + command_name + " " + lines[0])
             else:
                 help_message_list.append("/" + command_name + " " + "未提供帮助信息")

@@ -9,6 +9,7 @@ from bot.plugin.manager.plugin_registry import (
     auto_register,
 )
 from bot.llm.llm_tool_registry import clear_llm_tool_registry
+from bot.active.active_registry import clear_active_registry
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,8 @@ class PluginManager:
         self.module_list: list[tuple[str, ModuleType]] = []
 
     @staticmethod
-    def _get_module_file(path: str) -> list[dict[str, str]]:        modules = []
+    def _get_module_file(path: str) -> list[dict[str, str]]:
+        modules = []
         dir_list = os.listdir(path)
 
         for d in dir_list:
@@ -93,7 +95,7 @@ class PluginManager:
             self.plugin_list.append(
                 PluginData(
                     name=plugin["name"],
-                    file_path=plugin["path"],
+                    file_path=Path(plugin["path"]),
                     module_path=import_module_path,
                     builtin=True,
                 )
@@ -107,7 +109,7 @@ class PluginManager:
             self.plugin_list.append(
                 PluginData(
                     name=plugin["name"],
-                    file_path=plugin["path"],
+                    file_path=Path(plugin["path"]),
                     module_path=import_module_path,
                     builtin=False,
                 )
@@ -116,13 +118,16 @@ class PluginManager:
         auto_register()
 
     def reload(self) -> None:
-        """清除命令注册表，然后重载插件"""
+        """清除注册表，重载插件模块，重新注册"""
 
-        clear_llm_tool_registry()
         clear_command_registry()
+        clear_llm_tool_registry()
+        clear_active_registry()
+
         try:
             for _, module in self.module_list:
                 importlib.reload(module)
         except ModuleNotFoundError as e:
             logger.exception("重载错误: %s", e)
+
         self.load()

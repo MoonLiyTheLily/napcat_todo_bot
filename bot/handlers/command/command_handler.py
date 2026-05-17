@@ -29,5 +29,8 @@ class CommandHandler:
         if command_event is None:
             return
         logger.debug("CommandHandler已执行")
-        handler = self.commands.get(command_event.command, self.commands["not_found"])
-        await handler(command_event)
+        handler_data = self.commands.get(command_event.command)
+        if handler_data is None or handler_data.function is None:
+            handler_data = self.commands.get("not_found")
+        if handler_data is not None and handler_data.function is not None:
+            await handler_data.function(command_event)

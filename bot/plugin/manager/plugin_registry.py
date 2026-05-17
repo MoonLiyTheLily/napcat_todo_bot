@@ -1,9 +1,19 @@
 import sys
+from dataclasses import dataclass
+from typing import Callable
 from bot.plugin.basic_plugin import BasicPlugin
 from bot.llm.llm_tool_registry import llm_tool_registry
 from bot.active.active_registry import active_registry
 
-command_registry: dict = {}
+
+@dataclass
+class CommandRegistryData:
+    name: str
+    function: Callable | None = None
+    _class: type | None = None
+
+
+command_registry: dict[str, CommandRegistryData] = {}
 
 
 def register_command(command: str):
@@ -42,9 +52,18 @@ def auto_register():
         instance = cls()
         for attr_name in dir(instance):
             attr = getattr(instance, attr_name)
-            if callable(attr) and hasattr(attr, "__command_name__"):
-                command_registry[attr.__command_name__] = attr
-            elif callable(attr) and hasattr(attr, "__llm_tool_name__"):
-                llm_tool_registry[attr.__llm_tool_name__].function = attr
-            elif callable(attr) and hasattr(attr, "__active_task_name__"):
-                active_registry[attr.__active_task_name__].function = attr
+            if not callable(attr):
+                continue
+            if hasattr(attr, "__command_name__"):
+                name = attr.__command_name__
+                command_registry[name] = CommandRegistryData(
+                    name=name, function=attr, _class=cls
+                )
+            elif hasattr(attr, "__llm_tool_name__"):
+                name = attr.__llm_tool_name__
+                if name in llm_tool_registry:
+                    llm_tool_registry[name].function = attr
+            elif hasattr(attr, "__active_task_name__"):
+                name = attr.__active_task_name__
+                if name in active_registry:
+                    active_registry[name].function = attr
