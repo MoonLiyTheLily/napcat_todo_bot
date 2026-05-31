@@ -30,7 +30,7 @@ not_found_description = {
 }
 
 
-def not_found(tool_context, arguments):
+async def not_found(tool_context, arguments):
     print("LLM调用了不存在的函数")
     return "调用了不存在的命令。"
 

@@ -1,25 +1,29 @@
 import logging
 import websockets
 import asyncio
-from typing import Any
-from bot.types import CommandEvent, TodoItem
+import json
+from pathlib import Path
+from typing import List
+from bot.types import CommandEvent, Todo
 from bot.apis.plugin_context import PluginContext
 from bot.apis.create_reply import create_reply
 from bot.apis.send_message import sender
 from bot.plugin.basic_plugin import BasicPlugin
 from bot.apis.registries import register_llm_tool, register_command, register_active
 from bot.llm.llm_tool_registry import LLMToolContext
-from bot.plugin.builtin.todo.todo_tools import descriptions
 from bot.config.config import config
 from database import TodoDatabase
+from datetime import datetime
+
+with open(Path(__file__).parent / "todo_tools.json", "r", encoding="utf-8") as fp:
+    descriptions = json.load(fp)
 
 logger = logging.getLogger(__name__)
 
 
 class TodoHandler(BasicPlugin):
     def __init__(self) -> None:
-        self.todo_db = TodoDatabase()
-        self.todo_db.initialize_table()
+        self.todo_db: TodoDatabase = TodoDatabase()
         self.parameter_handlers = {
             "default": self.default,
             "parameter_not_found": self.parameter_not_found,
@@ -31,16 +35,15 @@ class TodoHandler(BasicPlugin):
             "undone": self.undone,
         }
 
+    async def initialize(self) -> None:
+        await super().initialize()
+        await self.todo_db.initialize()
+
     @register_command("todo")
     async def handle(self, context: PluginContext, command_event: CommandEvent):
         """待办事项管理
 
         处理todo命令的函数
-
-        :param context: 插件上下文
-        :type context: PluginContext
-        :param command_event: 解析获得的参数
-        :type command_event: CommandEvent
         """
 
         if len(command_event.parameters) == 0:
@@ -52,19 +55,10 @@ class TodoHandler(BasicPlugin):
                 param, self.parameter_handlers["parameter_not_found"]
             )
             logger.debug("第一参数: %s", param)
-
-        if handler is not None:
-            reply = handler(command_event)
-        else:
-            reply = (
-                create_reply()
-                .to(command_event.user_id)
-                .text("todo_handler已执行，但未找到对应的处理函数。")
-                .build()
-            )
+        reply = await handler(command_event)
         await context.sender.send(reply)
 
-    def help(self, command_event: CommandEvent):
+    async def help(self, command_event: CommandEvent):
         """显示待办事项的帮助信息"""
 
         help_message = (
@@ -78,7 +72,7 @@ class TodoHandler(BasicPlugin):
         reply = create_reply().to(command_event.user_id).text(help_message)
         return reply.build()
 
-    def parameter_not_found(self, command_event: CommandEvent):
+    async def parameter_not_found(self, command_event: CommandEvent):
         """处理未知参数的函数"""
 
         reply = (
@@ -88,7 +82,7 @@ class TodoHandler(BasicPlugin):
         )
         return reply.build()
 
-    def default(self, command_event: CommandEvent):
+    async def default(self, command_event: CommandEvent):
         """处理无参数情况的函数"""
 
         reply = (
@@ -98,28 +92,22 @@ class TodoHandler(BasicPlugin):
         )
         return reply.build()
 
-    def get_todos(self, user_id: int):
-        """获取用户的待办事项列表，并且是直接获得字符串列表
+    async def get_todos(self, user_id: int):
+        """获取用户的待办事项列表，并且是直接获得字符串列表"""
 
-        :param user_id: 用户id
-        :type user_id: int
-        :return: 待办事项列表
-        :rtype: list
-        """
-        todo_list = self.todo_db.check_todo(user_id)
+        todo_list = await self.todo_db.get_todos(user_id)
         if todo_list is None:
             return None
         else:
             result = []
             for item in todo_list:
-                assert isinstance(item, TodoItem)
                 result.append(item.get_list_string())
             return result
 
-    def show(self, command_event: CommandEvent):
+    async def show(self, command_event: CommandEvent):
         """显示用户的待办事项列表"""
 
-        todos = self.get_todos(command_event.user_id)
+        todos = await self.get_todos(command_event.user_id)
         if todos is None or len(todos) == 0:
             message = "您的待办事项列表为空。"
         else:
@@ -133,7 +121,7 @@ class TodoHandler(BasicPlugin):
         reply = create_reply().to(command_event.user_id).text(message)
         return reply.build()
 
-    def add(self, command_event: CommandEvent):
+    async def add(self, command_event: CommandEvent):
         """添加新的待办事项"""
 
         # 在本行内任何参数之后的内容都作为待办事项内容
@@ -145,16 +133,19 @@ class TodoHandler(BasicPlugin):
             )
             return reply.build()
 
-        self.todo_db.add_todo(
+        new_todo = Todo(
             user_id=command_event.user_id,
             content=full_content,
-            user_create_time=command_event.user_send_time,
+            create_time=datetime.strptime(
+                command_event.user_send_time, "%Y-%m-%d %H:%M:%S"
+            ),
         )
 
+        await self.todo_db.add_todo(new_todo)
         reply = create_reply().to(command_event.user_id).text("已添加新的待办事项。")
         return reply.build()
 
-    def delete(self, command_event: CommandEvent):
+    async def delete(self, command_event: CommandEvent):
         """删除指定的待办事项
 
         用户指定的是待办的编号（或者all），从1开始。待办编号是“此用户的第几个待办”，而不是总数据库里的id
@@ -179,7 +170,7 @@ class TodoHandler(BasicPlugin):
 
         if command_event.parameters[1].isdigit():
             todo_index = int(command_event.parameters[1]) - 1
-            todo_list = self.todo_db.check_todo(command_event.user_id)
+            todo_list = await self.todo_db.get_todos(command_event.user_id)
             if todo_list is None or len(todo_list) == 0:
                 reply = (
                     create_reply()
@@ -197,10 +188,10 @@ class TodoHandler(BasicPlugin):
                 return reply.build()
 
             todo_item = todo_list[todo_index]
-            assert isinstance(todo_item, TodoItem)
-            self.todo_db.delete_todo(command_event.user_id, todo_item.database_id)
+            await self.todo_db.delete(todo_item.todo_id)  # type: ignore
+
         elif command_event.parameters[1] == "all":
-            todo_list = self.todo_db.check_todo(command_event.user_id)
+            todo_list = await self.todo_db.get_todos(command_event.user_id)
             if todo_list is None or len(todo_list) == 0:
                 reply = (
                     create_reply()
@@ -209,13 +200,12 @@ class TodoHandler(BasicPlugin):
                 )
                 return reply.build()
             for todo in todo_list:
-                assert isinstance(todo, TodoItem)
-                self.todo_db.delete_todo(command_event.user_id, todo.database_id)
+                await self.todo_db.delete(todo.todo_id)  # type: ignore
 
         reply = create_reply().to(command_event.user_id).text("已删除指定的待办事项。")
         return reply.build()
 
-    def done(self, command_event: CommandEvent):
+    async def done(self, command_event: CommandEvent):
         """标记指定的待办事项为已完成
 
         用户指定的是待办的编号，从1开始。待办编号是“此用户的第几个待办”，而不是总数据库里的id
@@ -240,7 +230,7 @@ class TodoHandler(BasicPlugin):
 
         if command_event.parameters[1].isdigit():
             todo_index = int(command_event.parameters[1]) - 1
-            todo_list = self.todo_db.check_todo(command_event.user_id)
+            todo_list = await self.todo_db.get_todos(command_event.user_id)
             if todo_list is None or len(todo_list) == 0:
                 reply = (
                     create_reply()
@@ -258,10 +248,9 @@ class TodoHandler(BasicPlugin):
                 return reply.build()
 
             todo_item = todo_list[todo_index]
-            assert isinstance(todo_item, TodoItem)
-            self.todo_db.complete_todo(command_event.user_id, todo_item.database_id)
+            await self.todo_db.done(todo_item.todo_id)  # type: ignore
         elif command_event.parameters[1] == "all":
-            todo_list = self.todo_db.check_todo(command_event.user_id)
+            todo_list = await self.todo_db.get_todos(command_event.user_id)
             if todo_list is None or len(todo_list) == 0:
                 reply = (
                     create_reply()
@@ -270,13 +259,12 @@ class TodoHandler(BasicPlugin):
                 )
                 return reply.build()
             for todo in todo_list:
-                assert isinstance(todo, TodoItem)
-                self.todo_db.complete_todo(command_event.user_id, todo.database_id)
+                await self.todo_db.done(todo.todo_id)  # type: ignore
 
         reply = create_reply().to(command_event.user_id).text("已完成指定的待办事项。")
         return reply.build()
 
-    def undone(self, command_event: CommandEvent):
+    async def undone(self, command_event: CommandEvent):
         """标记指定的待办事项为未完成
 
         用户指定的是待办的编号，从1开始。待办编号是“此用户的第几个待办”，而不是总数据库里的id
@@ -305,7 +293,7 @@ class TodoHandler(BasicPlugin):
 
         if command_event.parameters[1].isdigit():
             todo_index = int(command_event.parameters[1]) - 1
-            todo_list = self.todo_db.check_todo(command_event.user_id)
+            todo_list = await self.todo_db.get_todos(command_event.user_id)
             if todo_list is None or len(todo_list) == 0:
                 reply = (
                     create_reply()
@@ -323,10 +311,9 @@ class TodoHandler(BasicPlugin):
                 return reply.build()
 
             todo_item = todo_list[todo_index]
-            assert isinstance(todo_item, TodoItem)
-            self.todo_db.complete_todo(command_event.user_id, todo_item.database_id)
+            await self.todo_db.done(todo_item.todo_id)  # type: ignore
         elif command_event.parameters[1] == "all":
-            todo_list = self.todo_db.check_todo(command_event.user_id)
+            todo_list = await self.todo_db.get_todos(command_event.user_id)
             if todo_list is None or len(todo_list) == 0:
                 reply = (
                     create_reply()
@@ -335,8 +322,7 @@ class TodoHandler(BasicPlugin):
                 )
                 return reply.build()
             for todo in todo_list:
-                assert isinstance(todo, TodoItem)
-                self.todo_db.complete_todo(command_event.user_id, todo.database_id)
+                await self.todo_db.done(todo.todo_id)  # type: ignore
 
         reply = (
             create_reply()
@@ -346,9 +332,9 @@ class TodoHandler(BasicPlugin):
         return reply.build()
 
     @register_llm_tool("check_todo", description=descriptions["check_todo"])
-    def check_todo_llm(self, tool_context: LLMToolContext, arguments):
+    async def check_todo_llm(self, tool_context: LLMToolContext, arguments: dict):
         user_id = tool_context.user_id
-        todos = self.get_todos(user_id)
+        todos = await self.get_todos(user_id)
         if todos is None or len(todos) == 0:
             message = "您的待办事项列表为空。"
         else:
@@ -361,39 +347,50 @@ class TodoHandler(BasicPlugin):
         return message
 
     @register_llm_tool("create_todo", description=descriptions["create_todo"])
-    def create_todo_llm(self, tool_context: LLMToolContext, arguments: dict):
+    async def create_todo_llm(self, tool_context: LLMToolContext, arguments: dict):
         content = arguments["content"]
         date = arguments.get("date")
         if date is None:
-            self.todo_db.add_todo(
+            new_todo = Todo(
                 user_id=tool_context.user_id,
                 content=content,
-                user_create_time=tool_context.user_send_time,
+                create_time=datetime.strptime(
+                    tool_context.user_send_time, "%Y-%m-%d %H:%M:%S"
+                ),
             )
-            return "已成功创建普通待办"
+            async with self.todo_db.get_session() as s:
+                s.add(new_todo)
+                await s.commit()
+                await s.refresh(new_todo)
+            return f"已成功创建普通待办。内容：{new_todo.content}，创建时间{new_todo.create_time}"
         else:
-            self.todo_db.add_todo(
+            new_todo = Todo(
                 user_id=tool_context.user_id,
                 content=content,
-                user_create_time=tool_context.user_send_time,
+                create_time=datetime.strptime(
+                    tool_context.user_send_time, "%Y-%m-%d %H:%M:%S"
+                ),
                 notify_time=date,
             )
-            return "已成功创建带有提醒的待办"
+            async with self.todo_db.get_session() as s:
+                s.add(new_todo)
+                await s.commit()
+                await s.refresh(new_todo)
+            return f"已成功创建带有提醒的待办。内容：{new_todo.content}，创建时间{new_todo.create_time}，提醒时间{new_todo.notify_time}"
 
     @register_llm_tool("delete_todo", description=descriptions["delete_todo"])
-    def delete_todo_llm(self, tool_context: LLMToolContext, arguments: dict):
+    async def delete_todo_llm(self, tool_context: LLMToolContext, arguments: dict):
         todo_id_or_all: str = arguments["todo_id_or_all"]
         if todo_id_or_all.isdigit():
             # 这里似乎还需要检查待办是否存在，顺带给llm提醒一下删除的待办是什么名字
-            self.todo_db.delete_todo(tool_context.user_id, int(todo_id_or_all))
+            await self.todo_db.delete(int(todo_id_or_all))
             return f"已经删除{int(todo_id_or_all)}号待办"
         elif todo_id_or_all == "all":
-            todo_list = self.todo_db.check_todo(tool_context.user_id)
+            todo_list = await self.todo_db.get_todos(tool_context.user_id)
             if todo_list is None or len(todo_list) == 0:
                 return "用户没有待办事项，不能删除"
             for todo in todo_list:
-                assert isinstance(todo, TodoItem)
-                self.todo_db.delete_todo(tool_context.user_id, todo.database_id)
+                await self.todo_db.delete(todo.todo_id)  # type: ignore
             return "已经删除用户的所有待办事项"
 
     @staticmethod
@@ -406,10 +403,9 @@ class TodoNotifier(BasicPlugin):
     def __init__(self) -> None:
         self.todo_db = TodoDatabase()
 
-    async def todo_sender(self, user_id, todo_items):
+    async def todo_sender(self, user_id, todo_items: List[Todo]):
         user_todos = []
         for item in todo_items:
-            assert isinstance(item, TodoItem)
             if not item.is_done:
                 user_todos.append(item.get_list_string())
         if len(user_todos) > 0:
@@ -418,18 +414,16 @@ class TodoNotifier(BasicPlugin):
             await sender.send(reply)
             logger.info("已发送待办事项通知给用户%s", user_id)
 
-    @register_active(
-        "todo_notifier", 60 * config.get("active.todo.notify_interval")
-    )
+    @register_active("todo_notifier", 60 * config.get("active.todo.notify_interval"))
     async def todo_notify(self):
         """Todo定时通知函数"""
         try:
             logger.info("检查待办事项通知")
-            users = self.todo_db.check_all_user()
+            users = await self.todo_db.get_users()
             if users is not None and len(users) > 0:
                 tasks: list[asyncio.Task] = []
                 for user_id in users:
-                    todo_items = self.todo_db.check_todo(user_id)
+                    todo_items = await self.todo_db.get_todos(user_id)
                     tasks.append(
                         asyncio.create_task(
                             self.todo_sender(user_id, todo_items), name=f"{user_id}"
@@ -444,7 +438,7 @@ class TodoNotifier(BasicPlugin):
                             task.get_name(),
                             task.exception(),
                         )
-        except (websockets.ConnectionClosedError, websockets.ConnectionClosed):
+        except websockets.ConnectionClosedError, websockets.ConnectionClosed:
             logger.error("WebSocket连接已关闭，停止待办事项通知")
             return
         except asyncio.CancelledError:
@@ -453,6 +447,3 @@ class TodoNotifier(BasicPlugin):
         except Exception as e:
             logger.exception("待办事项通知出现错误: %s", str(e))
             raise
-
-    def __del__(self):
-        self.todo_db.close()
