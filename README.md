@@ -1,5 +1,35 @@
 # Napcat Todo Bot
 
+本项目是一个基于NapcatQQ框架的QQ机器人。主要功能为待办列表。
+## 运行
+本项目使用uv管理依赖。请先安装uv。
+
+随后，Clone此项目：
+```
+git clone https://github.com/MoonLiyTheLily/napcat_todo_bot.git
+```
+安装依赖：
+```
+cd napcat_todo_bot
+uv sync
+```
+随后，可能还需要创建配置文件：
+```
+cp bot/config/config_example.json bot/config/config.json
+```
+如果需要使用大模型聊天，请编辑配置文件，将`llm`下的`enable`改为`true`，随后更改`config.json`或项目根目录下`.env`里的`api_key`，并设置`base_url`和`admin_user_id`。
+
+`.env`的`api_key`、`base_url`和`admin_user_id`具有更高优先级，会覆盖从`config.json`中读取到的设置。
+
+随后，启动NapcatQQ，创建一个Websocket Client，URL设置为`ws://localhost:8000`（本项目端口默认为`8000`），上报自身消息可设为关闭。消息格式请设为`Array`。
+
+最后，使用如下命令启动本程序：
+```
+uv run ./main.py
+```
+
+
+## 开发简述
 简单的机器人，开发的初衷是为了给自己写一个Todo机器人，后来是为了熟悉Python和Python的项目组织架构，也是学习AstrBot项目的机会，虽然我现在还看不太懂。
 
 目前只支持基本的todo功能，可以创建、删除、完成todo，现在支持了自然语言创建、删除，并且时间大概是对的。同时附带一个定时的未完成Todo通知。太久没回复机器人会触发重力文案，大概是彩蛋。
@@ -16,16 +46,17 @@
 
 1. done 统一的Sender
 2. done 自动的插件加载
-3. 统一的配置文件
+3. oing 统一的配置文件
 4. 更多的重力文案
 5. doing 梳理数据库文件，提供统一的数据库接口供继承（尚在考虑）
 6. doing 添加一个通用的数据库操作接口
 7. 减少消息处理层await的层数
 8. 改进错误处理，梳理层次
 9. 增加可注册指令组的功能，自动路由子指令，不需要插件自己处理
-10. 为插件自动提供上下文，包括框架的各种状态等等
+10. done 为插件自动提供上下文，包括框架的各种状态等等
 11. LLM支持保存记录到文件，以免重启了记录全丢
 12. 支持LLM Tool为LLM添加上下文要求，例如Todo可以给LLM提供当前时间等等（尚在考虑）
+13. doing 改用ORM
 
 远期规划：
 
@@ -34,6 +65,6 @@
 3. 配置管理器
 4. 设计消息类
 5. 升级为支持处理群聊消息（可开关）
-6. 增加生命周期管理类
-7. 优化热重载功能
+6. doing 增加生命周期管理类
+7. doing 优化热重载功能
 8. 提供一个简易的Webui，不打算做得很复杂但是应该至少不需要改代码来改动配置
