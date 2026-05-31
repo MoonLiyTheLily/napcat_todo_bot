@@ -5,6 +5,7 @@ import importlib
 from types import ModuleType
 from typing import Any
 import pydantic
+from bot.plugin.basic_plugin import BasicPlugin
 from bot.plugin.manager.plugin_registry import (
     clear_command_registry,
     auto_register,
@@ -45,6 +46,7 @@ class PluginManager:
         self.__class__._instances.append(self)
         self.plugin_list: list[PluginData] = []
         self.module_list: list[tuple[str, ModuleType]] = []
+        self.plugin_instances: list[BasicPlugin] = []
         self.plugin_context: Any = None
 
     @staticmethod
@@ -82,11 +84,12 @@ class PluginManager:
             "other": other_list,
         }
 
-    def load(self) -> None:
-        """加载插件"""
+    async def load(self) -> None:
+        """加载插件（异步初始化）"""
 
         self.plugin_list.clear()
         self.module_list.clear()
+        self.plugin_instances.clear()
 
         plugin_module_list = self._get_plugin_modules()
         for plugin in plugin_module_list["builtin"]:
@@ -117,9 +120,15 @@ class PluginManager:
                 )
             )
             self.module_list.append((plugin["name"], m))
-        auto_register()
+        self.plugin_instances = auto_register()
 
-    def reload(self) -> None:
+        for instance in self.plugin_instances:
+            try:
+                await instance.initialize()
+            except Exception:
+                logger.exception("插件 %s 异步初始化失败", type(instance).__name__)
+
+    async def reload(self) -> None:
         """清除注册表，重载插件模块，重新注册"""
 
         clear_command_registry()
@@ -132,4 +141,4 @@ class PluginManager:
         except ModuleNotFoundError as e:
             logger.exception("重载错误: %s", e)
 
-        self.load()
+        await self.load()

@@ -6,3 +6,6 @@ class BasicPlugin:
 
     def __init__(self) -> None:
         pass
+
+    async def initialize(self) -> None:
+        """异步初始化，插件可重写此方法进行异步初始化"""
