@@ -78,7 +78,9 @@ class PluginManager:
 
     def _get_plugin_modules(self) -> dict[str, list[dict[str, str]]]:
         builtin_list = self._get_module_file(get_builtin_plugin_path())
-        other_list = self._get_module_file(get_other_plugin_path())
+        other_list = []
+        if os.path.exists(get_other_plugin_path()):
+            other_list = self._get_module_file(get_other_plugin_path())
         return {
             "builtin": builtin_list,
             "other": other_list,

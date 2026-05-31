@@ -19,4 +19,4 @@ class ChatHandler:
         if enable_llm_reply:
             await self.llm_handler.handle(event)
             return
-        await create_mirror_reply(event, True)
+        await create_mirror_reply(event, True, True)
