@@ -392,7 +392,7 @@ class TodoHandler(BasicPlugin):
 
     @staticmethod
     @register_llm_tool("get_current_time", description=descriptions["get_current_time"])
-    def get_current_time(tool_context: LLMToolContext, arguments):
+    async def get_current_time(tool_context: LLMToolContext, arguments):
         return str(tool_context.user_send_time)
 
 

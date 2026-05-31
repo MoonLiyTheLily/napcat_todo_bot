@@ -59,7 +59,7 @@ class TodoDatabase(BasicDatabase):
             target_todo = await s.get(Todo, todo_id)
             if not target_todo:
                 return None
-            target_todo.is_done = True
+            target_todo.is_done = False
             await s.commit()
 
     async def delete(self, todo_id: int) -> None:

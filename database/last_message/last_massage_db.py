@@ -66,32 +66,31 @@ class LastMessageDatabase(BasicDatabase):
         stmt = select(LastMessageRecord.user_id).where(
             LastMessageRecord.send_time < datetime.now() - timedelta(hours=12)  # type: ignore
         )
-        try:
-            async with self.get_session() as s:
-                record = LastMessageRecord(user_id=user_id, send_time=send_time)
-                res = await s.get(LastMessageRecord, record.user_id)
-                if res:
-                    res.send_time = send_time
-                else:
-                    await self.add(record)
-                    logger.info(
-                        "已更新用户 %s 的最后一次信息，发送时间: %s",
-                        record.user_id,
-                        record.send_time,
-                    )
-                res = await s.execute(stmt)
-                res_sequence = res.scalars().all()
-                if len(res_sequence) > 0:
-                    del_stmt = delete(LastMessageRecord).where(
-                        LastMessageRecord.send_time < datetime.now() - timedelta(hours=12)  # type: ignore
-                    )
-                    await s.execute(del_stmt)
-                    logger.info("已删除过于老旧的消息记录%s", res_sequence)
-        except Exception as e:
-            logger.exception(e)
+        async with self.get_session() as s:
+            record = LastMessageRecord(user_id=user_id, send_time=send_time)
+            res = await s.get(LastMessageRecord, record.user_id)
+            if res:
+                res.send_time = send_time
+            else:
+                await self.add(record)
+                logger.info(
+                    "已更新用户 %s 的最后一次信息，发送时间: %s",
+                    record.user_id,
+                    record.send_time,
+                )
+            res = await s.execute(stmt)
+            res_sequence = res.scalars().all()
+            if len(res_sequence) > 0:
+                del_stmt = delete(LastMessageRecord).where(
+                    LastMessageRecord.send_time < datetime.now() - timedelta(hours=12)  # type: ignore
+                )
+                await s.execute(del_stmt)
+                logger.info("已删除过于老旧的消息记录%s", res_sequence)
+            await s.commit()
 
     async def delete(self, user_id: int):
         async with self.get_session() as s:
             res = await s.get(LastMessageRecord, user_id)
             if res is not None:
                 await s.delete(res)
+                await s.commit()

@@ -38,10 +38,14 @@ class UniversalHandler:
             return None
         if not self.last_message_db.inited:
             await self.last_message_db.initialize()
-        await self.last_message_db.update(
-            user_id=event["user_id"],
-            send_time=datetime.datetime.fromtimestamp(event["time"]),
-        )
+        try:
+            await self.last_message_db.update(
+                user_id=event["user_id"],
+                send_time=datetime.datetime.fromtimestamp(event["time"]),
+            )
+            logger.info("已更新用户 %d 的最近消息", event["user_id"])
+        except Exception as e:
+            logger.warning("更新用户最近消息记录失败: %s", e)
         if is_command(event):
             await self.command_handler.handle(event)
         else:

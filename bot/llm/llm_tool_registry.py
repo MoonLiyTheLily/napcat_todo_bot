@@ -14,7 +14,7 @@ class LLMToolContext:
         user_id: int,
     ) -> None:
         self.user_id = user_id
-        self.user_send_time: str
+        self.user_send_time: str = ""
 
 
 not_found_description = {

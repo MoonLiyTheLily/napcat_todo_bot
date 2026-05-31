@@ -53,7 +53,9 @@ class ActiveGravity(BasicPlugin):
     async def check_if_need_gravity(self, user_id: int) -> bool:
         last_message_db = self.last_message_db
         check_result = await last_message_db.check(user_id)
-        assert check_result is not None
+        if check_result is None:
+            logger.info("用户 %s 没有消息记录，跳过重力检查", user_id)
+            return False
         last_message_time = check_result.send_time
         current_time = datetime.datetime.now()
         time_diff = current_time - last_message_time
@@ -68,27 +70,25 @@ class ActiveGravity(BasicPlugin):
 
         logger.info("准备发送重力文案给用户 %s", user_id)
         path = Path(__file__).parent / "gravity.txt"
-        gravity_file = open(path, "r", encoding="utf-8")
-        for line in gravity_file:
-            if not line:
-                break
-            # 此处默认移除换行符，因为是一行一行的发
-            reply = create_reply().to(user_id).text(line.strip("\n")).build()
-            reply_length = len(line.strip())
-            # 模拟打字的时间，以岛村之刃按照！、？、。的分划，一行最多需要11秒
-            sleep_time = max(2, reply_length / 10)
-            await asyncio.sleep(sleep_time)
-            # sleep后再判定有没有新消息，避免sleep期间用户发消息
-            need_to_send = await self.check_if_need_gravity(user_id)
-            if need_to_send:
-                await sender.send(reply)
-                logger.info(
-                    "已发送重力文案给用户 %s: %s",
-                    user_id,
-                    line.strip()[0:10] + "...",
-                )
-            else:
-                return
-        logger.info("已完成发送重力文案给用户 %s的任务", user_id)
-        if gravity_file:
-            gravity_file.close()
+        with open(path, "r", encoding="utf-8") as gravity_file:
+            for line in gravity_file:
+                if not line:
+                    break
+                # 此处默认移除换行符，因为是一行一行的发
+                reply = create_reply().to(user_id).text(line.strip("\n")).build()
+                reply_length = len(line.strip())
+                # 模拟打字的时间，以岛村之刃按照！、？、。的分划，一行最多需要11秒
+                sleep_time = max(2, reply_length / 10)
+                await asyncio.sleep(sleep_time)
+                # sleep后再判定有没有新消息，避免sleep期间用户发消息
+                need_to_send = await self.check_if_need_gravity(user_id)
+                if need_to_send:
+                    await sender.send(reply)
+                    logger.info(
+                        "已发送重力文案给用户 %s: %s",
+                        user_id,
+                        line.strip()[0:10] + "...",
+                    )
+                else:
+                    return
+            logger.info("已完成发送重力文案给用户 %s的任务", user_id)
