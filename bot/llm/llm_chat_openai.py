@@ -64,13 +64,17 @@ class LLMChatSessionOpenAI:
         self, message: str, tool_list: dict[str, LLMToolRegistryData] | None = None
     ) -> str | None:
         """发送消息"""
-        self.messages_list.append({"role": "user", "content": message})
-        self.messages_list.append(
-            {
-                "role": "system",
-                "content": "本条消息发送时间" + self.tool_context.user_send_time,
-            }
+        if len(self.messages_list) == 0:
+            self.messages_list.append(
+                {
+                    "role": "system",
+                    "content": "最新消息发送时间" + self.tool_context.user_send_time,
+                }
+            )
+        self.messages_list[0]["content"] = (
+            "最新消息发送时间" + self.tool_context.user_send_time
         )
+        self.messages_list.append({"role": "user", "content": message})
         try:
             assert self.target_model is not None, "目标模型不能为空"
             if tool_list is not None:
@@ -82,7 +86,27 @@ class LLMChatSessionOpenAI:
                     messages=self.messages_list,
                     tools=tool_descriptions,
                 )
-                while response.choices[0].message.tool_calls is not None:
+                while response.choices[0].message.tool_calls:
+                    # 把含 tool_calls 的 assistant 消息加入历史
+                    tool_calls_data = []
+                    for tc in response.choices[0].message.tool_calls:
+                        tool_calls_data.append(
+                            {
+                                "id": tc.id,
+                                "type": tc.type,
+                                "function": {
+                                    "name": tc.function.name,
+                                    "arguments": tc.function.arguments,
+                                },
+                            }
+                        )
+                    self.messages_list.append(
+                        {
+                            "role": "assistant",
+                            "content": response.choices[0].message.content,
+                            "tool_calls": tool_calls_data,
+                        }
+                    )
                     # Qwen疑似会返回两个id不一样但是内容几乎一样的函数调用
                     # 阿里云文档也只取了第一个tool_call，这里决定学习
                     tool_call = response.choices[0].message.tool_calls[0]
@@ -110,12 +134,6 @@ class LLMChatSessionOpenAI:
                         messages=self.messages_list,
                         tools=tool_descriptions,
                     )
-                    assistant_output = response.choices[0].message
-                    if assistant_output.content is None:
-                        assistant_output.content = ""
-                    self.messages_list.append(
-                        {"role": "assistant", "content": assistant_output.content}
-                    )
             else:
                 response = await self.client.chat_completions(
                     model=self.target_model,
@@ -126,13 +144,20 @@ class LLMChatSessionOpenAI:
             while self.messages_list[-1]["role"] != "user":
                 self.messages_list.pop()
             raise
+        # 依据Deepseek v4 Pro
+        # response.choices[0].message.content 可能是 None。有些模型（Qwen）在 tool_calls 以外的场景也会返回 null
+        # content。走到 chat() 返回 None → text(None) → JSON 里变成 "text": null → NapCat 显示为空。
+        # 这很可能就是你看到"开头两个换行"的原因——不是真的换行，而是 content 为 null 被当空消息显示了。
         self.messages_list.append(
             {
                 "role": response.choices[0].message.role,
-                "content": response.choices[0].message.content,
+                "content": response.choices[0].message.content or "",
             }
         )
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        if content:
+            content = content.lstrip("\n")
+        return content
 
     def clear(self) -> None:
         """重置会话"""

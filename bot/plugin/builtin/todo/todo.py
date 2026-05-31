@@ -367,7 +367,7 @@ class TodoHandler(BasicPlugin):
                 create_time=datetime.strptime(
                     tool_context.user_send_time, "%Y-%m-%d %H:%M:%S"
                 ),
-                notify_time=date,
+                notify_time=datetime.strptime(date, "%Y-%m-%d %H:%M:%S"),
             )
             async with self.todo_db.get_session() as s:
                 s.add(new_todo)
