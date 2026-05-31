@@ -35,21 +35,22 @@ def clear_command_registry():
     command_registry.clear()
 
 
-def auto_register():
-    """自动扫描import的所有插件，并注册里面的方法"""
+def auto_register() -> list[BasicPlugin]:
+    """自动扫描import的所有插件，并注册里面的方法，返回插件实例列表"""
 
     command_registry.clear()
+    instances: list[BasicPlugin] = []
     plugin_class_list = BasicPlugin.__subclasses__()
     for cls in plugin_class_list:
 
         # 验证该类是否是模块中当前最新（存活）的类，防止重载带来的旧类滞留
-        # Gemini写的，主要是为了防止那个PluginManagerInterface在重载插件的时候没把自己正确销毁
         module = sys.modules.get(cls.__module__)
         if not module or getattr(module, cls.__name__, None) is not cls:
             continue
 
         # 实例化这个类，然后注册它底下所有的命令
         instance = cls()
+        instances.append(instance)
         for attr_name in dir(instance):
             attr = getattr(instance, attr_name)
             if not callable(attr):
@@ -67,3 +68,5 @@ def auto_register():
                 name = attr.__active_task_name__
                 if name in active_registry:
                     active_registry[name].function = attr
+
+    return instances

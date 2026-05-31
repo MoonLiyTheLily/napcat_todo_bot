@@ -40,7 +40,7 @@ async def main() -> None:
     """主函数"""
     # 初始化
     core = Core()
-    core.initialize()
+    await core.initialize()
 
     server = await websockets.serve(
         core.handle,

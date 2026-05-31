@@ -25,7 +25,7 @@ class PluginManagerInterface(BasicPlugin):
             await context.sender.send(reply.build())
         logger.info("开始重载插件")
         if context.plugin_manager is not None:
-            context.plugin_manager.reload()
+            await context.plugin_manager.reload()
         logger.info("重载插件完成")
         reply = create_reply().to(command_event.user_id).text("已重载所有插件")
         await context.sender.send(reply.build())

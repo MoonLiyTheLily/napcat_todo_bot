@@ -21,10 +21,10 @@ class Core:
         self.plugin_context = None
         self.active_task_manager_task = None
 
-    def initialize(self):
+    async def initialize(self):
         # 插件管理器
         self.plugin_manager = PluginManager()
-        self.plugin_manager.load()
+        await self.plugin_manager.load()
 
         # 插件上下文
         self.plugin_context = PluginContext(config, self.plugin_manager)
