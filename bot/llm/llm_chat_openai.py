@@ -95,7 +95,7 @@ class LLMChatSessionOpenAI:
                     assert (
                         tool_data.function is not None
                     ), f"调用的LLMTool {tool_data.name} 函数字段为None"
-                    tool_result = tool_data.function(self.tool_context, arguments)
+                    tool_result = await tool_data.function(self.tool_context, arguments)
                     # 构造工具返回信息
                     tool_message = {
                         "role": "tool",
