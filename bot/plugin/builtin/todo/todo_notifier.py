@@ -43,7 +43,6 @@ class TodoNotifier(BasicPlugin):
                             self.todo_sender(user_id, todo_items), name=f"{user_id}"
                         )
                     )
-                    assert todo_items is not None
                 await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
                 for task in tasks:
                     if task.exception() is not None:
