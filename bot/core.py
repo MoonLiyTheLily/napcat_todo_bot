@@ -33,10 +33,6 @@ class Core:
 
         # 主动任务管理器
         self.active_task_manager = ActiveLogicManager()
-        self.active_task_manager.add_tasks()
-
-        # 开始运行主动任务
-        self.active_task_manager.run()
 
     def check_initialize(self):
         return (
@@ -46,10 +42,13 @@ class Core:
             and self.plugin_context is not None
         )
 
-    async def handle(self, websocket):
+    async def handle(self, websocket) -> None:
         if not self.check_initialize():
             logger.warning("Core没有正确初始化。")
             return
+        # 开始运行主动任务
+        self.active_task_manager.add_tasks()  # type: ignore
+        self.active_task_manager.run()  # type: ignore
         self.plugin_context.message_sender.websocket = websocket  # type: ignore
         background_tasks = set()
 
@@ -71,5 +70,5 @@ class Core:
                     # 任务完成后从集合中移除，并统一打印日志
                     task.add_done_callback(background_tasks.discard)
                     # task.add_done_callback(_log_task_result)
-        except (websockets.ConnectionClosedError, websockets.ConnectionClosed):
+        except websockets.ConnectionClosedError, websockets.ConnectionClosed:
             logger.info("WebSocket连接已关闭")
