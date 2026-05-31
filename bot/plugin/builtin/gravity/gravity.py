@@ -16,9 +16,7 @@ class ActiveGravity(BasicPlugin):
     def __init__(self) -> None:
         self.last_message_db = LastMessageDatabase()
 
-    @register_active(
-        "gravity", 60 * config.get("active.todo.notify_interval")
-    )
+    @register_active("gravity", 60 * config.get("active.gravity.check_interval"))
     async def gravity(self) -> None:
         """重力文案逻辑"""
 
@@ -27,7 +25,7 @@ class ActiveGravity(BasicPlugin):
             last_message_db = self.last_message_db
             # 获取所有用户的最后消息记录
             # 如果距离上次消息超过一定时长，发送重力文案
-            user_ids = last_message_db.check_all_user(threshold)
+            user_ids = await last_message_db.check_all(threshold)
             tasks: list[asyncio.Task] = []
             if user_ids is not None and len(user_ids) > 0:
                 for user_id in user_ids:
@@ -54,13 +52,11 @@ class ActiveGravity(BasicPlugin):
 
     async def check_if_need_gravity(self, user_id: int) -> bool:
         last_message_db = self.last_message_db
-        check_result = last_message_db.check_last_message_record(user_id)
+        check_result = await last_message_db.check(user_id)
         assert check_result is not None
         last_message_time = check_result.send_time
         current_time = datetime.datetime.now()
-        time_diff = current_time - datetime.datetime.strptime(
-            last_message_time, "%Y-%m-%d %H:%M:%S"
-        )
+        time_diff = current_time - last_message_time
         if time_diff.total_seconds() < 60:
             logger.info("用户 %s 在发送重力文案时有消息记录，中止发送", user_id)
             return False
@@ -96,7 +92,3 @@ class ActiveGravity(BasicPlugin):
         logger.info("已完成发送重力文案给用户 %s的任务", user_id)
         if gravity_file:
             gravity_file.close()
-
-    def __del__(self):
-        if self.last_message_db:
-            self.last_message_db.close()

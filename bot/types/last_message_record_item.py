@@ -1,6 +1,8 @@
-class LastMessageRecordItem:
-    """最近消息记录项"""
+from sqlmodel import SQLModel, Field
+from datetime import datetime
 
-    def __init__(self, user_id: int, send_time: str):
-        self.user_id = user_id
-        self.send_time: str = send_time
+
+class LastMessageRecord(SQLModel, table=True):
+    __tablename__: str = "last_message_record"
+    user_id: int = Field(primary_key=True)
+    send_time: datetime

@@ -18,7 +18,8 @@ def clear_active_registry():
     active_registry.clear()
 
 
-def register_active(task_name, interval):
+def register_active(task_name, interval: int):
+    """注册一定时间触发一次的主动任务，interval单位是秒"""
     active_registry.update({task_name: ActiveTaskRegistryData(interval=interval)})
 
     def decorator(f):
