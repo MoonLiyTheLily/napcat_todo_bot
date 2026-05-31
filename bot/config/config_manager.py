@@ -36,7 +36,9 @@ class ConfigManager:
     def _load(self) -> dict[str, Any]:
         """从 config.json 加载配置，再用 .env 密钥覆盖"""
         if not self.CONFIG_PATH.exists():
-            raise FileNotFoundError(f"配置文件不存在: {self.CONFIG_PATH}")
+            raise FileNotFoundError(
+                f"配置文件不存在: {self.CONFIG_PATH}，若您是第一次运行，请将config_example.json改名为config.json"
+            )
         with open(self.CONFIG_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
 

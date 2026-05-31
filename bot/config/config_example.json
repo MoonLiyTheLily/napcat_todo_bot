@@ -13,7 +13,7 @@
     }
   },
   "llm": {
-    "enable": true,
+    "enable": false,
     "basic": {
       "api_key": "your_api_key",
       "base_url": "https://api.example.com/v1",
