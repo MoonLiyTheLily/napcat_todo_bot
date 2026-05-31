@@ -5,7 +5,6 @@ import colorlog
 from bot.config.config import config
 from bot.core import Core
 
-
 logger = logging.getLogger(__name__)
 
 colored_log_handler = colorlog.StreamHandler()
