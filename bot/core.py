@@ -19,7 +19,6 @@ class Core:
         self.universal_handler = None
         self.active_task_manager = None
         self.plugin_context = None
-        self.active_task_manager_task = None
 
     async def initialize(self):
         # 插件管理器
@@ -37,9 +36,7 @@ class Core:
         self.active_task_manager.add_tasks()
 
         # 开始运行主动任务
-        self.active_task_manager_task = asyncio.create_task(
-            self.active_task_manager.run_tasks()
-        )
+        self.active_task_manager.run()
 
     def check_initialize(self):
         return (
@@ -47,7 +44,6 @@ class Core:
             and self.universal_handler is not None
             and self.active_task_manager is not None
             and self.plugin_context is not None
-            and self.active_task_manager_task is not None
         )
 
     async def handle(self, websocket):
@@ -77,7 +73,3 @@ class Core:
                     # task.add_done_callback(_log_task_result)
         except (websockets.ConnectionClosedError, websockets.ConnectionClosed):
             logger.info("WebSocket连接已关闭")
-        finally:
-            # 在前面检查是否已经完整初始化，此处用ignore避免类型检查继续提示
-            self.active_task_manager_task.cancel()  # type: ignore
-            await self.active_task_manager_task  # type: ignore
