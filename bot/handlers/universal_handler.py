@@ -39,10 +39,11 @@ class UniversalHandler:
         if not self.last_message_db.inited:
             await self.last_message_db.initialize()
         try:
-            await self.last_message_db.update(
+            new_record = LastMessageRecord(
                 user_id=event["user_id"],
                 send_time=datetime.datetime.fromtimestamp(event["time"]),
             )
+            await self.last_message_db.update(new_record)
             logger.info("已更新用户 %d 的最近消息", event["user_id"])
         except Exception as e:
             logger.warning("更新用户最近消息记录失败: %s", e)
