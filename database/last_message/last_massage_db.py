@@ -57,7 +57,7 @@ class LastMessageDatabase(BasicDatabase):
             s.add(record)
             await s.commit()
 
-    async def update(self, user_id: int, send_time: datetime) -> None:
+    async def update(self, record: LastMessageRecord) -> None:
         """更新最后消息记录，如果没有就插入
 
         同时负责删除过老的记录
@@ -67,10 +67,9 @@ class LastMessageDatabase(BasicDatabase):
             LastMessageRecord.send_time < datetime.now() - timedelta(hours=12)  # type: ignore
         )
         async with self.get_session() as s:
-            record = LastMessageRecord(user_id=user_id, send_time=send_time)
             res = await s.get(LastMessageRecord, record.user_id)
             if res:
-                res.send_time = send_time
+                res.send_time = record.send_time
             else:
                 await self.add(record)
                 logger.info(
