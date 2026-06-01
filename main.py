@@ -2,8 +2,6 @@ import asyncio
 import logging
 import websockets
 import colorlog
-from bot.config.config import config
-from bot.core import Core
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +31,9 @@ logging.basicConfig(
         # logging.FileHandler("logs/app.log", encoding="utf-8"),
     ],
 )
+
+from bot.config.config import config
+from bot.core import Core
 
 
 async def main() -> None:

@@ -39,9 +39,12 @@ class ConfigManager:
             raise FileNotFoundError(
                 f"配置文件不存在: {self.CONFIG_PATH}，若您是第一次运行，请将config_example.json改名为config.json"
             )
-        with open(self.CONFIG_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
+        try:
+            with open(self.CONFIG_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except json.JSONDecodeError as e:
+            logger.exception("解析配置文件时出现错误: %s", e)
+            exit(-1)
         # .env 密钥覆盖
         for env_key, config_path in self.ENV_OVERRIDES.items():
             env_value = os.getenv(env_key)
