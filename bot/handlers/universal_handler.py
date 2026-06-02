@@ -3,7 +3,7 @@ import datetime
 from bot.handlers import CommandHandler
 from bot.handlers import ChatHandler
 from bot.handlers.command.command_resolver import is_command
-from database.last_message.last_massage_db import LastMessageDatabase
+from database import LastMessageDatabase
 from bot.types import LastMessageRecord
 from bot.apis.plugin_context import PluginContext
 
