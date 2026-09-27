@@ -38,23 +38,26 @@ from bot.core import Core
 
 async def main() -> None:
     """主函数"""
-    # 初始化
     core = Core()
-    await core.initialize()
-
-    server = await websockets.serve(
-        core.handle,
-        config.get("websocket_host"),
-        config.get("websocket_port"),
-        subprotocols=[],  # 建议加上，兼容性更好
-    )
-    logger.info("WebSocket 服务已启动")
+    server = None
     try:
+        await core.initialize()
+        server = await websockets.serve(
+            core.handle,
+            config.get("websocket_host"),
+            config.get("websocket_port"),
+            subprotocols=[],  # 建议加上，兼容性更好
+        )
+        logger.info("WebSocket 服务已启动")
         await asyncio.Future()
-    except asyncio.CancelledError:
-        server.close()
-        await server.wait_closed()
-        logger.info("WebSocket 服务已停止")
+    finally:
+        try:
+            if server is not None:
+                server.close()
+                await server.wait_closed()
+                logger.info("WebSocket 服务已停止")
+        finally:
+            await core.shutdown()
 
 
 if __name__ == "__main__":

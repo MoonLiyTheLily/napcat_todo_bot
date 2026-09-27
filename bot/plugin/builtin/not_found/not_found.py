@@ -27,3 +27,6 @@ class NotFoundHandler(BasicPlugin):
             .text("未找到命令。/help 可以查看目前支持的命令列表。")
         )
         await context.sender.send(reply.build())
+
+
+PLUGIN_CLASSES = (NotFoundHandler,)

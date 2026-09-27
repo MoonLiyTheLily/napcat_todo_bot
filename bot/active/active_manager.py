@@ -10,7 +10,7 @@ class ActiveLogicManager:
 
     def __init__(self) -> None:
         self.active_tasks: list[asyncio.Task] = []
-        self.main_task: asyncio.Task | None
+        self.main_task: asyncio.Task | None = None
 
     def add_tasks(self):
         for name, task_registry_data in active_registry.items():
@@ -42,12 +42,21 @@ class ActiveLogicManager:
                         )
 
     def run(self):
+        if self.main_task is not None and not self.main_task.done():
+            return
+        if not self.active_tasks:
+            self.add_tasks()
         self.main_task = asyncio.create_task(self._run_tasks())
 
-    # async def stop_tasks(self):
-    #     for task in self.active_tasks:
-    #         task.cancel()
-    #     results = await asyncio.gather(*self.active_tasks, return_exceptions=True)
-    #     for r in results:
-    #         if isinstance(r, Exception) and not isinstance(r, asyncio.CancelledError):
-    #             logger.exception("主动逻辑任务停止时发生异常: %s", r)
+    async def stop(self) -> None:
+        """先停止任务监督器，再取消并等待所有主动任务。"""
+        if self.main_task is not None:
+            self.main_task.cancel()
+            await asyncio.gather(self.main_task, return_exceptions=True)
+            self.main_task = None
+
+        tasks = self.active_tasks.copy()
+        self.active_tasks.clear()
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)

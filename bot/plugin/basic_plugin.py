@@ -1,11 +1,14 @@
 class BasicPlugin:
     """所有插件的基类
 
-    本基类设计目的是简单，目前只用于使用__subclasses__来实例化插件类然后注册方法
+    入口模块通过 PLUGIN_CLASSES 显式声明需要加载的插件类。
     """
 
     def __init__(self) -> None:
         pass
 
     async def initialize(self) -> None:
-        """异步初始化，插件可重写此方法进行异步初始化"""
+        """异步初始化方法，插件可重写此方法进行异步初始化"""
+
+    async def shutdown(self) -> None:
+        """异步卸载方法，插件可重写此方法进行异步卸载"""

@@ -57,3 +57,6 @@ class HelpHandler(BasicPlugin):
         help_message += "\n".join(help_message_list)
         reply = create_reply().to(command_event.user_id).text(help_message)
         await context.sender.send(reply.build())
+
+
+PLUGIN_CLASSES = (HelpHandler,)

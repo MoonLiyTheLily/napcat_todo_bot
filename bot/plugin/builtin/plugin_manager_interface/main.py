@@ -29,3 +29,6 @@ class PluginManagerInterface(BasicPlugin):
         logger.info("重载插件完成")
         reply = create_reply().to(command_event.user_id).text("已重载所有插件")
         await context.sender.send(reply.build())
+
+
+PLUGIN_CLASSES = (PluginManagerInterface,)
