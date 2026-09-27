@@ -396,4 +396,6 @@ class TodoHandler(BasicPlugin):
         return str(tool_context.user_send_time)
 
 
-__all__ = ["TodoHandler", "TodoNotifier"]
+PLUGIN_CLASSES = (TodoHandler, TodoNotifier)
+
+__all__ = ["TodoHandler", "TodoNotifier", "PLUGIN_CLASSES"]

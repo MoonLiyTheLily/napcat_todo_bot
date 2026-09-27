@@ -42,10 +42,11 @@ llm_tool_registry: dict[str, LLMToolRegistryData] = {"not_found": not_found_data
 
 
 def register_llm_tool(command: str, description):
-    llm_tool_registry.update({command: LLMToolRegistryData(command, description)})
+    """声明 LLM 工具"""
 
     def decorator(func):
         func.__llm_tool_name__ = command
+        func.__llm_tool_description__ = description
         return func
 
     return decorator

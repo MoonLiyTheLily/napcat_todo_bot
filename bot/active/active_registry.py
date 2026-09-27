@@ -1,4 +1,3 @@
-# 目前未使用
 import asyncio
 from typing import Callable
 
@@ -19,8 +18,7 @@ def clear_active_registry():
 
 
 def register_active(task_name, interval: int):
-    """注册一定时间触发一次的主动任务，interval单位是秒"""
-    active_registry.update({task_name: ActiveTaskRegistryData(interval=interval)})
+    """声明主动任务，间隔单位为秒"""
 
     def decorator(f):
         async def wrapper(self, **kwargs):
@@ -29,6 +27,7 @@ def register_active(task_name, interval: int):
                 await asyncio.sleep(interval)
 
         wrapper.__active_task_name__ = task_name
+        wrapper.__active_task_interval__ = interval
 
         return wrapper
 

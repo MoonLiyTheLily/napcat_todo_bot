@@ -92,3 +92,6 @@ class ActiveGravity(BasicPlugin):
                 else:
                     return
             logger.info("已完成发送重力文案给用户 %s的任务", user_id)
+
+
+PLUGIN_CLASSES = (ActiveGravity,)

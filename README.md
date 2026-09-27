@@ -68,3 +68,17 @@ uv run ./main.py
 6. doing 增加生命周期管理类
 7. doing 优化热重载功能
 8. 提供一个简易的Webui，不打算做得很复杂但是应该至少不需要改代码来改动配置
+
+## 插件入口约定
+
+每个插件放在 `bot/plugin/builtin/<插件名>/` 或 `bot/plugin/other/<插件名>/`，入口文件为 `main.py` 或 `<插件名>.py`。入口模块需要声明 `PLUGIN_CLASSES`，列出该目录中要加载的所有 `BasicPlugin` 子类；一个目录可以包含多个插件类，例如待办插件同时包含命令处理器和通知器：
+
+```python
+PLUGIN_CLASSES = (TodoHandler, TodoNotifier)
+```
+
+插件管理器会为每个目录保留一条记录，并按声明顺序实例化、注册和初始化这些类。类没有出现在 `PLUGIN_CLASSES` 中就不会被加载。
+
+命令、LLM 工具和主动任务的装饰器只声明元数据；插件实例创建后，`PluginManager` 调用 `registers.py` 中对应的函数写入注册表。这些函数接收插件实例列表，采用增量注册；完整重建前需先清空对应注册表。
+
+插件可以重写 `BasicPlugin.shutdown()` 释放资源。机器人退出时会先停止主动任务，再按加载的逆序等待各插件的 `shutdown()` 完成。

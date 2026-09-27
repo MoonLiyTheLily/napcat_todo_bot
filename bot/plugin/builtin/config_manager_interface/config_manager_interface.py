@@ -78,3 +78,6 @@ class ConfigManagerHandler(BasicPlugin):
             reply = create_reply().to(user_id).text("您可以用/config help查看帮助。")
             await context.sender.send(reply.build())
         return None
+
+
+PLUGIN_CLASSES = (ConfigManagerHandler,)

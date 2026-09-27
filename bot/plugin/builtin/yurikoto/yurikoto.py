@@ -120,3 +120,6 @@ class YurikotoHandler(BasicPlugin):
         else:
             reply = create_reply().to(user_id).text("获取Yurikoto随机台词失败。")
             await context.sender.send(reply.build())
+
+
+PLUGIN_CLASSES = (YurikotoHandler,)
