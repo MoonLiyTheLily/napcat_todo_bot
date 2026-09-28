@@ -308,7 +308,7 @@ class TodoHandler(BasicPlugin):
                 return reply.build()
 
             todo_item = todo_list[todo_index]
-            await self.todo_db.done(todo_item.todo_id)  # type: ignore
+            await self.todo_db.undone(todo_item.todo_id)  # type: ignore
         elif command_event.parameters[1] == "all":
             todo_list = await self.todo_db.get_todos(command_event.user_id)
             if todo_list is None or len(todo_list) == 0:
@@ -319,7 +319,7 @@ class TodoHandler(BasicPlugin):
                 )
                 return reply.build()
             for todo in todo_list:
-                await self.todo_db.done(todo.todo_id)  # type: ignore
+                await self.todo_db.undone(todo.todo_id)  # type: ignore
 
         reply = (
             create_reply()
