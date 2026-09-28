@@ -1,34 +1,29 @@
-import asyncio
-from typing import Callable
+from dataclasses import dataclass
+from typing import Awaitable, Callable
 
 
+@dataclass(frozen=True)
 class ActiveTaskRegistryData:
-    def __init__(self, *, interval: int, func: Callable | None = None) -> None:
-        self.function: Callable | None = func if callable(func) else None
-        self.interval: int = interval
+    function: Callable[[], Awaitable[None]]
+    interval: float
 
 
 active_registry: dict[str, ActiveTaskRegistryData] = {}
 
 
-def clear_active_registry():
-    """全量清空，用于重载插件时"""
-
+def clear_active_registry() -> None:
+    """清空注册表，供插件重载使用。"""
     active_registry.clear()
 
 
-def register_active(task_name, interval: int):
-    """声明主动任务，间隔单位为秒"""
+def register_active(task_name: str, interval: float):
+    """声明周期任务。interval 的单位为秒，任务启动后立即执行一次。"""
+    if interval <= 0:
+        raise ValueError(f"主动任务 {task_name} 的间隔必须大于零")
 
-    def decorator(f):
-        async def wrapper(self, **kwargs):
-            while True:
-                await f(self, **kwargs)
-                await asyncio.sleep(interval)
-
-        wrapper.__active_task_name__ = task_name
-        wrapper.__active_task_interval__ = interval
-
-        return wrapper
+    def decorator(function):
+        function.__active_task_name__ = task_name
+        function.__active_task_interval__ = interval
+        return function
 
     return decorator

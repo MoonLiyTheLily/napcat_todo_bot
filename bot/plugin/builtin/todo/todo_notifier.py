@@ -1,7 +1,8 @@
 import logging
-import asyncio
+from collections import defaultdict
+from datetime import datetime
 import websockets
-from typing import List
+
 from bot.plugin.basic_plugin import BasicPlugin
 from bot.types import Todo
 from database import TodoDatabase
@@ -17,46 +18,49 @@ class TodoNotifier(BasicPlugin):
     def __init__(self) -> None:
         self.todo_db = TodoDatabase()
 
-    async def todo_sender(self, user_id, todo_items: List[Todo]):
-        user_todos = []
-        for item in todo_items:
-            if not item.is_done:
-                user_todos.append(item.get_list_string())
-        if len(user_todos) > 0:
-            message = "您有以下待办事项未完成：\n" + "\n".join(user_todos)
-            reply = create_reply().to(user_id).text(message).build()
-            await sender.send(reply)
-            logger.info("已发送待办事项通知给用户%s", user_id)
+    async def initialize(self) -> None:
+        await self.todo_db.initialize()
 
-    @register_active("todo_notifier", 60 * config.get("active.todo.notify_interval"))
+    async def shutdown(self) -> None:
+        await self.todo_db.close()
+
+    async def _send(self, user_id: int, items: list[Todo], heading: str) -> bool:
+        message = heading + "\n" + "\n".join(item.get_list_string() for item in items)
+        reply = create_reply().to(user_id).text(message).build()
+        return await sender.send(reply)
+
+    @register_active("todo_notifier", config.get("active.todo.notify_interval"))
     async def todo_notify(self):
-        """Todo定时通知函数"""
-        try:
-            logger.info("检查待办事项通知")
-            users = await self.todo_db.get_users()
-            if users is not None and len(users) > 0:
-                tasks: list[asyncio.Task] = []
-                for user_id in users:
-                    todo_items = await self.todo_db.get_todos(user_id)
-                    tasks.append(
-                        asyncio.create_task(
-                            self.todo_sender(user_id, todo_items), name=f"{user_id}"
-                        )
-                    )
-                await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
-                for task in tasks:
-                    if task.exception() is not None:
-                        logger.exception(
-                            "向用户 %s 的待办通知发生错误: %s",
-                            task.get_name(),
-                            task.exception(),
-                        )
-        except websockets.ConnectionClosedError, websockets.ConnectionClosed:
-            logger.error("WebSocket连接已关闭，停止待办事项通知")
-            return
-        except asyncio.CancelledError:
-            logger.info("待办事项通知任务已取消")
-            raise
-        except Exception as e:
-            logger.exception("待办事项通知出现错误: %s", str(e))
-            raise
+        """按既有配置周期，汇总发送用户所有未完成待办。"""
+        users: dict[int, list[Todo]] = defaultdict(list)
+        for item in await self.todo_db.get_unfinished_todos():
+            users[item.user_id].append(item)
+        for user_id, items in users.items():
+            try:
+                if await self._send(user_id, items, "您有以下待办事项未完成："):
+                    logger.info("已发送待办事项汇总给用户 %s", user_id)
+            except (websockets.ConnectionClosed, websockets.InvalidState, ConnectionError):
+                raise
+            except Exception:
+                logger.exception("向用户 %s 发送待办事项汇总失败", user_id)
+
+    @register_active("todo_due_reminder", 30)
+    async def remind_due_todos(self):
+        """按 notify_time 单次提醒；失败项留待下一轮重试。"""
+        users: dict[int, list[Todo]] = defaultdict(list)
+        for item in await self.todo_db.get_due_reminders(datetime.now()):
+            users[item.user_id].append(item)
+        for user_id, items in users.items():
+            try:
+                sent = await self._send(user_id, items, "您的以下待办已到提醒时间：")
+            except (websockets.ConnectionClosed, websockets.InvalidState, ConnectionError):
+                raise
+            except Exception:
+                logger.exception("向用户 %s 发送到期提醒失败，稍后重试", user_id)
+                continue
+            if sent:
+                await self.todo_db.mark_reminders_sent(
+                    [item.todo_id for item in items if item.todo_id is not None],
+                    datetime.now(),
+                )
+                logger.info("已发送 %d 项到期提醒给用户 %s", len(items), user_id)
