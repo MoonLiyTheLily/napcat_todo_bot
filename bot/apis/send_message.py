@@ -9,12 +9,22 @@ class MessageSender:
     """信息发送器"""
 
     def __init__(self):
-        self.websocket: websockets.ServerConnection
+        self.websocket: websockets.ServerConnection | None = None
 
-    async def send(self, message):
-        assert self.websocket is not None
+    def bind(self, websocket: websockets.ServerConnection) -> None:
+        self.websocket = websocket
+
+    def unbind(self, websocket: websockets.ServerConnection) -> None:
+        if self.websocket is websocket:
+            self.websocket = None
+
+    async def send(self, message) -> bool:
+        websocket = self.websocket
+        if websocket is None:
+            raise ConnectionError("没有可用的 WebSocket 连接")
         try:
-            await self.websocket.send(message=message)
+            await websocket.send(message=message)
+            return True
         except (
             websockets.ConnectionClosedError,
             websockets.ConnectionClosed,

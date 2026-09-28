@@ -16,7 +16,10 @@ class ActiveGravity(BasicPlugin):
     def __init__(self) -> None:
         self.last_message_db = LastMessageDatabase()
 
-    @register_active("gravity", 60 * config.get("active.gravity.check_interval"))
+    async def shutdown(self) -> None:
+        await self.last_message_db.close()
+
+    @register_active("gravity", config.get("active.gravity.check_interval"))
     async def gravity(self) -> None:
         """重力文案逻辑"""
 

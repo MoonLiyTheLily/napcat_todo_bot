@@ -19,20 +19,24 @@ class Core:
         self.universal_handler = None
         self.active_task_manager = None
         self.plugin_context = None
+        self._connection = None
+        self._connection_lock = asyncio.Lock()
 
     async def initialize(self):
         # 插件管理器
         self.plugin_manager = PluginManager()
         await self.plugin_manager.load()
 
+        # 主动任务管理器
+        self.active_task_manager = ActiveLogicManager()
+
         # 插件上下文
-        self.plugin_context = PluginContext(config, self.plugin_manager)
+        self.plugin_context = PluginContext(
+            config, self.plugin_manager, self.reload_plugins
+        )
 
         # 主消息处理器
         self.universal_handler = UniversalHandler(self.plugin_context)
-
-        # 主动任务管理器
-        self.active_task_manager = ActiveLogicManager()
 
     def check_initialize(self):
         return (
@@ -45,19 +49,39 @@ class Core:
     async def shutdown(self) -> None:
         """停止主动任务后卸载插件。"""
         try:
-            if self.active_task_manager is not None:
-                await self.active_task_manager.stop()
+            async with self._connection_lock:
+                if self.active_task_manager is not None:
+                    await self.active_task_manager.stop()
+                if self._connection is not None and self.plugin_context is not None:
+                    self.plugin_context.message_sender.unbind(self._connection)
+                    self._connection = None
         finally:
             if self.plugin_manager is not None:
                 await self.plugin_manager.shutdown()
+            if self.universal_handler is not None:
+                await self.universal_handler.last_message_db.close()
+
+    async def reload_plugins(self) -> None:
+        """按顺序停止旧任务、重载插件，再启动新任务。"""
+        async with self._connection_lock:
+            # 此处假设已完成初始化
+            await self.active_task_manager.stop()  # type: ignore
+            await self.plugin_manager.reload()  # type: ignore
+            if self._connection is not None:
+                self.active_task_manager.run()  # type: ignore
 
     async def handle(self, websocket) -> None:
         if not self.check_initialize():
             logger.warning("Core没有正确初始化。")
             return
-        self.plugin_context.message_sender.websocket = websocket  # type: ignore
-        # run() 是幂等的，重连时不会重复启动主动任务
-        self.active_task_manager.run()  # type: ignore
+        async with self._connection_lock:
+            if self._connection is not None:
+                logger.warning("已有活动连接，拒绝第二个 WebSocket 连接")
+                await websocket.close(code=1013, reason="已有活动连接")
+                return
+            self._connection = websocket
+            self.plugin_context.message_sender.bind(websocket)  # type: ignore
+            self.active_task_manager.run()  # type: ignore
         background_tasks = set()
 
         try:
@@ -74,13 +98,26 @@ class Core:
                     task = asyncio.create_task(self.universal_handler.handle(event))  # type: ignore
                     background_tasks.add(task)
 
-                    # Gemini加的
-                    # 任务完成后从集合中移除，并统一打印日志
-                    task.add_done_callback(background_tasks.discard)
-                    # task.add_done_callback(_log_task_result)
+                    def on_done(done_task: asyncio.Task):
+                        background_tasks.discard(done_task)
+                        if not done_task.cancelled():
+                            error = done_task.exception()
+                            if error is not None:
+                                logger.error(
+                                    "处理消息时发生错误",
+                                    exc_info=(type(error), error, error.__traceback__),
+                                )
+
+                    task.add_done_callback(on_done)
+
         except websockets.ConnectionClosedError, websockets.ConnectionClosed:
             logger.info("WebSocket连接已关闭")
         finally:
             for task in background_tasks:
                 task.cancel()
             await asyncio.gather(*background_tasks, return_exceptions=True)
+            async with self._connection_lock:
+                if self._connection is websocket:
+                    await self.active_task_manager.stop()  # type: ignore
+                    self.plugin_context.message_sender.unbind(websocket)  # type: ignore
+                    self._connection = None

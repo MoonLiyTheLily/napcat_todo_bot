@@ -47,5 +47,5 @@ def register_active_tasks(instances: Iterable[BasicPlugin]) -> None:
         if name in active_registry:
             raise ValueError(f"主动任务重复注册: {name}")
         active_registry[name] = ActiveTaskRegistryData(
-            interval=method.__active_task_interval__, func=method
+            interval=method.__active_task_interval__, function=method
         )

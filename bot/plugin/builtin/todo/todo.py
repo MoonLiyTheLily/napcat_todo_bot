@@ -36,6 +36,9 @@ class TodoHandler(BasicPlugin):
         await super().initialize()
         await self.todo_db.initialize()
 
+    async def shutdown(self) -> None:
+        await self.todo_db.close()
+
     @register_command("todo")
     async def handle(self, context: PluginContext, command_event: CommandEvent):
         """待办事项管理

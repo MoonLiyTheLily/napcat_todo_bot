@@ -13,6 +13,9 @@ class BasicDatabase:
     async def initialize(self) -> None:
         raise NotImplementedError
 
+    async def close(self) -> None:
+        await self.engine.dispose()
+
     @asynccontextmanager
     async def get_session(self):
         async with self.session_maker() as s:

@@ -3,6 +3,7 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 import importlib
+import sys
 from types import ModuleType
 from typing import Literal
 
@@ -33,10 +34,7 @@ class PluginData:
 
 
 class PluginManager:
-    _instances: list["PluginManager"] = []
-
     def __init__(self) -> None:
-        self.__class__._instances.append(self)
         self.plugins: dict[str, PluginData] = {}
 
     @staticmethod
@@ -76,8 +74,8 @@ class PluginManager:
             "other": other_list,
         }
 
-    def _auto_register(self) -> None:
-        """实例化被显式声明的插件类，并注册其方法。"""
+    def _initialize_plugins(self) -> None:
+        """实例化入口模块显式声明的插件类。"""
         clear_command_registry()
         clear_llm_tool_registry()
         clear_active_registry()
@@ -100,12 +98,9 @@ class PluginManager:
                     if cls in seen_classes:
                         raise ValueError(f"插件类重复声明: {cls.__name__}")
                     seen_classes.add(cls)
-
+                    # 初始化
                     plugin.instances.append(cls())
 
-                register_commands(plugin.instances)
-                register_llm_tools(plugin.instances)
-                register_active_tasks(plugin.instances)
             except Exception as exc:
                 plugin.status = "failed"
                 plugin.error = str(exc)
@@ -140,9 +135,8 @@ class PluginManager:
                     plugin.status = "failed"
                     plugin.error = str(exc)
                     raise
-        # 注册模块内部的类实例
-        self._auto_register()
-        # 执行初始化方法
+        self._initialize_plugins()
+        # 只有插件实例化、初始化成功，才对外注册其方法
         for plugin in self.plugins.values():
             for instance in plugin.instances:
                 try:
@@ -152,14 +146,30 @@ class PluginManager:
                     plugin.error = f"{type(instance).__name__}: {exc}"
                     logger.exception("插件 %s 异步初始化失败", type(instance).__name__)
             if plugin.status != "failed":
-                plugin.status = "ready"
+                try:
+                    register_commands(plugin.instances)
+                    register_llm_tools(plugin.instances)
+                    register_active_tasks(plugin.instances)
+                    plugin.status = "ready"
+                except Exception as exc:
+                    plugin.status = "failed"
+                    plugin.error = str(exc)
+                    raise
 
     async def reload(self) -> None:
-        """重载插件模块，再由 load() 统一重建注册表。"""
+        """卸载旧实例，重载入口及其子模块，再重建注册表。"""
+        module_names: set[str] = set()
+        for plugin in self.plugins.values():
+            module_names.add(plugin.module_path)
+            prefix = plugin.module_path.rsplit(".", 1)[0] + "."
+            module_names.update(name for name in sys.modules if name.startswith(prefix))
+
+        await self.shutdown()
         try:
-            for plugin in self.plugins.values():
-                if plugin.module is not None:
-                    importlib.reload(plugin.module)
+            for name in sorted(
+                module_names, key=lambda name: name.count("."), reverse=True
+            ):
+                importlib.reload(sys.modules[name])
         except ModuleNotFoundError as e:
             logger.exception("未找到目标插件模块: %s", e)
             raise
