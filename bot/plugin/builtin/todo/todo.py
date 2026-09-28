@@ -185,7 +185,9 @@ class TodoHandler(BasicPlugin):
                 return reply.build()
 
             todo_item = todo_list[todo_index]
-            await self.todo_db.delete(todo_item.todo_id)  # type: ignore
+            await self.todo_db.delete(
+                user_id=command_event.user_id, todo_id=todo_item.todo_id  # type: ignore
+            )
 
         elif command_event.parameters[1] == "all":
             todo_list = await self.todo_db.get_todos(command_event.user_id)
@@ -197,7 +199,9 @@ class TodoHandler(BasicPlugin):
                 )
                 return reply.build()
             for todo in todo_list:
-                await self.todo_db.delete(todo.todo_id)  # type: ignore
+                await self.todo_db.delete(
+                    user_id=command_event.user_id, todo_id=todo.todo_id  # type: ignore
+                )
 
         reply = create_reply().to(command_event.user_id).text("已删除指定的待办事项。")
         return reply.build()
@@ -377,18 +381,33 @@ class TodoHandler(BasicPlugin):
 
     @register_llm_tool("delete_todo", description=descriptions["delete_todo"])
     async def delete_todo_llm(self, tool_context: LLMToolContext, arguments: dict):
-        todo_id_or_all: str = arguments["todo_id_or_all"]
-        if todo_id_or_all.isdigit():
-            # 这里似乎还需要检查待办是否存在，顺带给llm提醒一下删除的待办是什么名字
-            await self.todo_db.delete(int(todo_id_or_all))
-            return f"已经删除{int(todo_id_or_all)}号待办"
-        elif todo_id_or_all == "all":
-            todo_list = await self.todo_db.get_todos(tool_context.user_id)
-            if todo_list is None or len(todo_list) == 0:
-                return "用户没有待办事项，不能删除"
+        todo_id_or_all = arguments.get("todo_id_or_all")
+        if not isinstance(todo_id_or_all, str):
+            return "请提供待办列表中的编号，或使用all删除所有待办"
+
+        todo_list = await self.todo_db.get_todos(tool_context.user_id)
+        if not todo_list:
+            return "用户没有待办事项，不能删除"
+
+        if todo_id_or_all == "all":
             for todo in todo_list:
-                await self.todo_db.delete(todo.todo_id)  # type: ignore
+                await self.todo_db.delete(
+                    user_id=tool_context.user_id, todo_id=todo.todo_id  # type: ignore
+                )
             return "已经删除用户的所有待办事项"
+
+        if not todo_id_or_all.isdecimal():
+            return "待办编号无效，请使用待办列表中的编号"
+        todo_index = int(todo_id_or_all) - 1
+        if todo_index < 0 or todo_index >= len(todo_list):
+            return "待办编号无效，请使用待办列表中的编号"
+
+        todo = todo_list[todo_index]
+        if not await self.todo_db.delete(
+            user_id=tool_context.user_id, todo_id=todo.todo_id  # type: ignore
+        ):
+            return "待办已不存在，请重新查看待办列表"
+        return f"已经删除第{todo_index + 1}号待办：{todo.content}"
 
     @staticmethod
     @register_llm_tool("get_current_time", description=descriptions["get_current_time"])
