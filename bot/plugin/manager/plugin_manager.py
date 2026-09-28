@@ -161,7 +161,11 @@ class PluginManager:
                 if plugin.module is not None:
                     importlib.reload(plugin.module)
         except ModuleNotFoundError as e:
+            logger.exception("未找到目标插件模块: %s", e)
+            raise
+        except Exception as e:
             logger.exception("重载错误: %s", e)
+            raise
 
         await self.load()
 
