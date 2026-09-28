@@ -15,17 +15,19 @@ class PluginManagerInterface(BasicPlugin):
     @register_command("pluginreload")
     async def handle(self, context: PluginContext, command_event: CommandEvent) -> None:
         """重载所有插件"""
-
         user_id = command_event.user_id
         admin_user_id = config.get("admin_user_id")
         if user_id != admin_user_id:
-            reply = create_reply().to(user_id).text("您不是管理员，不能使用此命令。")
-            # logger.info("管理员用户id:%s 当前用户id:%s", admin_user_id, user_id)
-            # print(type(user_id), "H", type(admin_user_id))
+            reply = create_reply().to(user_id).text("您不是管理员，不能使用此命令")
             await context.sender.send(reply.build())
+            return
         logger.info("开始重载插件")
-        if context.plugin_manager is not None:
-            await context.plugin_manager.reload()
+        try:
+            if context.plugin_manager is not None:
+                await context.plugin_manager.reload()
+        except:
+            reply = create_reply().to(command_event.user_id).text("重载插件错误")
+            await context.sender.send(reply.build())
         logger.info("重载插件完成")
         reply = create_reply().to(command_event.user_id).text("已重载所有插件")
         await context.sender.send(reply.build())
