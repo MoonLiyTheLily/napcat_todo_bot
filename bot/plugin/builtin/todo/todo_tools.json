@@ -38,7 +38,7 @@
         "properties": {
           "todo_id_or_all": {
             "type": "string",
-            "description": "通过check_todo得到的待办列表里的次序。例如：如果你希望删除前面几条，需要重复执行“删除第一个代办”"
+              "description": "通过check_todo得到的当前用户待办列表编号（从1开始），不是数据库ID；也可以传all删除当前用户的全部待办。例如：若要删除前面几条，可重复删除编号1"
           }
         },
         "required": ["todo_id_or_all"]

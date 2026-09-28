@@ -3,6 +3,7 @@ from pathlib import Path
 from bot.types import Todo
 
 from typing import List
+from sqlalchemy import delete as sql_delete
 from sqlmodel import select
 from database.basic_database import BasicDatabase
 
@@ -24,8 +25,8 @@ class TodoDatabase(BasicDatabase):
             return list(res.scalars().all())
 
     async def get_todos(self, user_id: int | None) -> List[Todo]:
-        stmt = select(Todo)
-        if user_id:
+        stmt = select(Todo).order_by(Todo.todo_id)
+        if user_id is not None:
             stmt = stmt.where(Todo.user_id == user_id)
         async with self.get_session() as s:
             result = await s.execute(stmt)
@@ -62,10 +63,10 @@ class TodoDatabase(BasicDatabase):
             target_todo.is_done = False
             await s.commit()
 
-    async def delete(self, todo_id: int) -> None:
+    async def delete(self, *, user_id: int, todo_id: int) -> bool:
         async with self.get_session() as s:
-            target_todo = await s.get(Todo, todo_id)
-            if not target_todo:
-                return None
-            await s.delete(target_todo)
+            result = await s.execute(
+                sql_delete(Todo).where(Todo.todo_id == todo_id, Todo.user_id == user_id)
+            )
             await s.commit()
+            return result.rowcount > 0
