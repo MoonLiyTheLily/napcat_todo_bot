@@ -1,6 +1,7 @@
 {
   "websocket_host": "127.0.0.1",
   "websocket_port": 8000,
+  "websocket_token": "",
   "admin_user_id": 114514,
   "active": {
     "todo": {

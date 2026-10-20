@@ -35,6 +35,32 @@ logging.basicConfig(
 from bot.config.config import config
 from bot.core import Core
 
+import secrets
+from http import HTTPStatus
+
+
+def authenticate_websocket(connection, request):
+    # 兼容尚未新增该配置项的旧配置文件
+    try:
+        token = config.get("websocket_token")
+    except KeyError:
+        token = ""
+
+    if not token:
+        return None
+
+    headers = request.headers.get_all("Authorization")
+    expected = f"Bearer {token}".encode("utf-8")
+
+    if len(headers) == 1 and secrets.compare_digest(
+        headers[0].encode("utf-8"), expected
+    ):
+        return None
+
+    response = connection.respond(HTTPStatus.UNAUTHORIZED, "Unauthorized\n")
+    response.headers["WWW-Authenticate"] = "Bearer"
+    return response
+
 
 async def main() -> None:
     """主函数"""
@@ -47,6 +73,7 @@ async def main() -> None:
             config.get("websocket_host"),
             config.get("websocket_port"),
             subprotocols=[],  # 建议加上，兼容性更好
+            process_request=authenticate_websocket,
         )
         logger.info("WebSocket 服务已启动")
         await asyncio.Future()
