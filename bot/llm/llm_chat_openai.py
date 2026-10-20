@@ -50,7 +50,7 @@ class LLMChatClientOpenAI:
 class LLMChatSessionOpenAI:
     """管理单个对话session (带历史记录)"""
 
-    def __init__(self, client: LLMChatClientOpenAI, user_id: int =0000000000) -> None:
+    def __init__(self, client: LLMChatClientOpenAI, user_id: int) -> None:
         self.user: int = user_id
         self.client: LLMChatClientOpenAI = client
         self.messages_list: list[ChatCompletionMessageParam] = []
@@ -226,17 +226,3 @@ class LLMChatHandlerOpenAI:
             reply = create_reply().to(user_id).text("请求回复时出现错误。")
             await sender.send(reply.build())
         logger.info("LLMChat已经处理完来自: %s 的消息", user_id)
-
-
-if __name__ == "__main__":
-    cli = LLMChatClientOpenAI()
-    test = LLMChatSessionOpenAI(cli)
-    while True:
-        usermsg = input()
-        if usermsg == "p":
-            print(test.messages_list)
-            continue
-        elif usermsg == "clear":
-            test.clear()
-        res = test.chat(usermsg)
-        print(res)

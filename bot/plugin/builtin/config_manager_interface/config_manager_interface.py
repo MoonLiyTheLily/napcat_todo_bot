@@ -9,12 +9,27 @@ from bot.plugin.manager.plugin_registry import register_command
 
 logger = logging.getLogger(__name__)
 
+sensitive_paths = {
+    "websocket_token",
+    "llm.basic",
+    "admin_user_id",
+}
+
 
 class ConfigManagerHandler(BasicPlugin):
     def __init__(self) -> None:
         pass
 
     def get(self, path: str) -> ReplyMessage:
+        if any(
+            path == sensitive
+            or sensitive.startswith(path + ".")  # 查询父级
+            or path.startswith(sensitive + ".")  # 查询子级
+            for sensitive in sensitive_paths
+        ):
+            reply = create_reply().text("不能在聊天窗口访问该值。")
+            return reply
+
         try:
             get_result: Any = config.get(path)
         except KeyError as e:

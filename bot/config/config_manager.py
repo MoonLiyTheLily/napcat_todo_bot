@@ -79,8 +79,6 @@ class ConfigManager:
 
     def get(self, path: str) -> Any:
         """点分路径访问配置，如 config.get("llm.basic.api_key")"""
-        if path == "websocket_token":
-            return "None"
         return self._get_nested(self._data, path)
 
     def set(self, path: str, value: Any) -> None:
