@@ -8,6 +8,7 @@
             "notify_interval": 1800
         },
         "gravity": {
+            "enable": false,
             "check_interval": 3600,
             "threshold": 60,
             "earliest": 1440

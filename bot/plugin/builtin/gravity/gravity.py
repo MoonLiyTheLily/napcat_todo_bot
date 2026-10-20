@@ -22,6 +22,8 @@ class ActiveGravity(BasicPlugin):
     @register_active("gravity", config.get("active.gravity.check_interval"))
     async def gravity(self) -> None:
         """重力文案逻辑"""
+        if config.get("active.gravity.enable") == False:
+            return
 
         threshold = config.get("active.gravity.threshold")
         try:
@@ -54,6 +56,9 @@ class ActiveGravity(BasicPlugin):
             raise
 
     async def check_if_need_gravity(self, user_id: int) -> bool:
+        if config.get("active.gravity.enable") == False:
+            return False
+
         last_message_db = self.last_message_db
         check_result = await last_message_db.check(user_id)
         if check_result is None:
@@ -70,6 +75,8 @@ class ActiveGravity(BasicPlugin):
 
     async def gravity_sender(self, user_id: int) -> None:
         """发送重力文案的函数"""
+        if config.get("active.gravity.enable") == False:
+            return
 
         logger.info("准备发送重力文案给用户 %s", user_id)
         path = Path(__file__).parent / "gravity.txt"
