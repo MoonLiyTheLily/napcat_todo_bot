@@ -15,13 +15,13 @@ uv sync
 ```
 随后，可能还需要创建配置文件：
 ```
-cp bot/config/config_example.json bot/config/config.json
+cp config.example.json config.json
 ```
 如果需要使用大模型聊天，请编辑配置文件，将`llm`下的`enable`改为`true`，随后更改`config.json`或项目根目录下`.env`里的`api_key`，并设置`base_url`和`admin_user_id`。
 
-`.env`的`api_key`、`base_url`和`admin_user_id`具有更高优先级，会覆盖从`config.json`中读取到的设置。
+`.env`的`admin_user_id`、`websocket_token`、`api_key`、`base_url`、`target_model`具有更高优先级，会覆盖从`config.json`中读取到的设置。
 
-随后，启动NapcatQQ，创建一个Websocket Client，URL设置为`ws://localhost:8000`（本项目端口默认为`8000`），上报自身消息可设为关闭。消息格式请设为`Array`。
+随后，启动NapcatQQ，创建一个Websocket Client，URL设置为`ws://localhost:8000`（本项目端口默认为`8000`），上报自身消息可设为关闭。消息格式请设为`Array`。此步需要设置 Token。
 
 最后，使用如下命令启动本程序：
 ```

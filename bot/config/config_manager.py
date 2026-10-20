@@ -18,15 +18,16 @@ class ConfigManager:
     3. 运行时通过 set() 修改的值写入内存，可通过 save() 持久化到 json
     """
 
-    CONFIG_PATH = Path(__file__).parent.parent.parent / "bot" / "config" / "config.json"
+    CONFIG_PATH = Path(__file__).parent.parent.parent / "config.json"
 
     # .env 中需要覆盖到配置的密钥字段映射
     # key: .env 中的变量名, value: 配置中的点分路径
     ENV_OVERRIDES = {
-        "api_key": "llm.basic.api_key",
-        "base_url": "llm.basic.base_url",
         "admin_user_id": "admin_user_id",
         "websocket_token": "websocket_token",
+        "api_key": "llm.basic.api_key",
+        "base_url": "llm.basic.base_url",
+        "target_model": "llm.basic.target_model",
     }
 
     def __init__(self) -> None:
@@ -38,7 +39,7 @@ class ConfigManager:
         """从 config.json 加载配置，再用 .env 密钥覆盖"""
         if not self.CONFIG_PATH.exists():
             raise FileNotFoundError(
-                f"配置文件不存在: {self.CONFIG_PATH}，若您是第一次运行，请将config_example.json改名为config.json"
+                f"配置文件不存在: {self.CONFIG_PATH}，若您是第一次运行，请将config.example.json改名为config.json，并填写配置"
             )
         try:
             with open(self.CONFIG_PATH, "r", encoding="utf-8") as f:
